@@ -18,6 +18,7 @@ public sealed class MessageLock
     {
         LockDuration = lockDuration;
         Renew();
+        CheckForExpiry();
     }
 
     public Action CreateHandler(Action protectedAction) =>
