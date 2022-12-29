@@ -4,7 +4,7 @@ namespace SETech.Messaging.MessageBus.Sender;
 
 /// <summary>The <see cref="IMessageBusSender"/> publishes messages to a queue or a topic.</summary>
 /// <typeparam name="TPayload">The payload type to send.</typeparam>
-public interface IMessageBusSender<TPayload>
+public interface IMessageBusSender<TPayload> : IDisposable
 {
     /// <summary>Sends a message to the queue or subscription.</summary>
     /// <param name="message">The <see cref="BusMessage{TPayload}"/> to send.</param>

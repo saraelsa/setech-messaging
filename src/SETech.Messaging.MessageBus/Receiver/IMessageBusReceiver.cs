@@ -4,7 +4,7 @@ namespace SETech.Messaging.MessageBus.Receiver;
 
 /// <summary>The <see cref="IMessageBusReceiver"/> receives messages from a queue or a subscription to a topic.</summary>
 /// <typeparam name="TPayload">The payload type to receive.</typeparam>
-public interface IMessageBusReceiver<TPayload>
+public interface IMessageBusReceiver<TPayload> : IDisposable
 {
     /// <summary>The mode to receive messages with. This controls how messages are settled.</summary>
     public ReceiveMode ReceiveMode { get; }

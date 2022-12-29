@@ -8,7 +8,7 @@ namespace SETech.Messaging.MessageBus.Client;
 ///     The <see cref="IMessageBusClient"/> represents a connection to the message bus and can be used to create other types
 ///     used for interacting with the message bus.
 /// </summary>
-public interface IMessageBusClient
+public interface IMessageBusClient : IDisposable
 {
     /// <summary>Creates a <see cref="IMessageBusSender{TPayload}"/>.</summary>
     /// <typeparam name="TPayload">The payload type to send.</typeparam>

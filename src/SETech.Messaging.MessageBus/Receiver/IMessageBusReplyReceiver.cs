@@ -13,7 +13,7 @@ namespace SETech.Messaging.MessageBus.Receiver;
 ///     <see cref="ReceiveMode.ReceiveAndDelete"/>.
 /// </remarks>
 /// <typeparam name="TPayload">The payload type to receive.</typeparam>
-public interface IMessageBusReplyReceiver<TPayload>
+public interface IMessageBusReplyReceiver<TPayload> : IDisposable
     where TPayload : ICorrelatedMessagePayload
 {
     /// <summary>Receives the next message with the specified <paramref name="correlationId"/>.</summary>
