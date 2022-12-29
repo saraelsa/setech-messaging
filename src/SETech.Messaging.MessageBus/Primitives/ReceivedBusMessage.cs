@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace SETech.Messaging.MessageBus.Primitives;
 
 /// <summary>A message that was received by a <see cref="Receiver.IMessageBusReceiver{TPayload}"/>.</summary>
@@ -9,6 +11,7 @@ public class ReceivedBusMessage<TPayload> : BusMessage<TPayload>
 
     public ReceivedBusMessage() { }
 
+    [SetsRequiredMembers]
     public ReceivedBusMessage
     (
         string? messageId,

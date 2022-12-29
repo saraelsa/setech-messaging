@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace SETech.Messaging.MessageBus.Primitives;
 
 /// <summary>A message that is transferred via a message bus.</summary>
@@ -15,6 +17,7 @@ public class BusMessage<TPayload>
 
     public BusMessage() { }
 
+    [SetsRequiredMembers]
     public BusMessage(string? messageId, TimeSpan timeToLive, TPayload payload)
     {
         MessageId = messageId;
