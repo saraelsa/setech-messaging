@@ -42,14 +42,17 @@ public interface IMessageBusReceiver<TPayload> : IDisposable
     public Task CompleteMessageAsync(ReceivedBusMessage<TPayload> message, CancellationToken cancellationToken = default);
 
     /// <summary>
-    ///     Receives the next message in the queue or subscription without locking it. This message is open to being locked
-    ///     and settled by this or another application. The first call returns the first message in the queue. Each
-    ///     subsequent call receives the next message.
+    ///     Receives a message in the queue or subscription without locking it. This message is open to being locked and
+    ///     settled by this or another application. The first call returns the first message in the queue. Each subsequent
+    ///     call receives the next message.
     /// </summary>
     /// <remarks>This method may return deferred messages.</remarks>
+    /// <param name="fromSequenceNumber">
+    ///     The minimum sequence number of the message to receive. If this is set, the peek pointer will be reset.
+    /// </param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while peeking the next message.</param>
-    /// <returns>The <see cref="ReceivedBusMessage{TPayload}"/> that has been received.</returns>
-    public Task<ReceivedBusMessage<TPayload>> PeekMessageAsync
+    /// <returns>The <see cref="ReceivedBusMessage{TPayload}"/> that has been received, if any.</returns>
+    public Task<ReceivedBusMessage<TPayload>?> PeekMessageAsync
     (
         long? fromSequenceNumber = default,
         CancellationToken cancellationToken = default
@@ -60,6 +63,8 @@ public interface IMessageBusReceiver<TPayload> : IDisposable
     ///     locked and settled by this or another application.
     /// </summary>
     /// <remarks>This method may return deferred messages.</remarks>
+    /// <param name="maxMessages">The maximum number of messages to receive.</param>
+    /// <param name="fromSequenceNumber">The minimum sequence number of the messages to receive.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while peeking the next message.</param>
     /// <returns>
     ///     The <see cref="IReadOnlyList{ReceivedBusMessage{TPayload}}"/> of messages that have been received.

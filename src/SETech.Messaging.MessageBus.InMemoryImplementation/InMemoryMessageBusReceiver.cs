@@ -43,7 +43,7 @@ public class InMemoryMessageBusReceiver<TPayload> : IMessageBusReceiver<TPayload
         throw new NotImplementedException();
     }
 
-    public Task<ReceivedBusMessage<TPayload>> PeekMessageAsync
+    public Task<ReceivedBusMessage<TPayload>?> PeekMessageAsync
     (
         long? fromSequenceNumber = null,
         CancellationToken cancellationToken = default
