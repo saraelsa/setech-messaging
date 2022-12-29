@@ -7,12 +7,6 @@ public class BusMessage<TPayload>
     /// <summary>The ID of the message. This can be any free-form string and can be used for duplicate detection.</summary>
     public string? MessageId { get; init; }
 
-    /// <summary>
-    ///     The correlation ID of the message. This can be used for two-way communication using
-    ///     <see cref="Receiver.IMessageBusReceiver{TPayload}"/>.
-    /// </summary>
-    public string? CorrelationId { get; init; }
-
     /// <summary>The duration after which the message expires.</summary>
     public required TimeSpan TimeToLive { get; init; }
 
@@ -21,10 +15,9 @@ public class BusMessage<TPayload>
 
     public BusMessage() { }
 
-    public BusMessage(string? messageId, string? correlationId, TimeSpan timeToLive, TPayload payload)
+    public BusMessage(string? messageId, TimeSpan timeToLive, TPayload payload)
     {
         MessageId = messageId;
-        CorrelationId = correlationId;
         TimeToLive = timeToLive;
         Payload = payload;
     }

@@ -12,12 +12,11 @@ public class ReceivedBusMessage<TPayload> : BusMessage<TPayload>
     public ReceivedBusMessage
     (
         string? messageId,
-        string? correlationId,
         TimeSpan timeToLive,
         TPayload payload,
         long sequenceNumber
     )
-        : base(messageId, correlationId, timeToLive, payload)
+        : base(messageId, timeToLive, payload)
     {
         SequenceNumber = sequenceNumber;
     }
