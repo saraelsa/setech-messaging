@@ -7,6 +7,11 @@ namespace SETech.Messaging.MessageBus.InMemoryImplementation;
 
 public class InMemoryMessageBusClient : IMessageBusClient
 {
+    public void Dispose()
+    {
+        throw new NotImplementedException();
+    }
+
     public IMessageBusReceiver<TPayload> CreateReceiver<TPayload>(string queueName)
     {
         throw new NotImplementedException();

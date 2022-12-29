@@ -5,6 +5,11 @@ namespace SETech.Messaging.MessageBus.InMemoryImplementation;
 
 public class InMemoryMessageBusReceiver<TPayload> : IMessageBusReceiver<TPayload>
 {
+    public void Dispose()
+    {
+        throw new NotImplementedException();
+    }
+
     public ReceiveMode ReceiveMode => throw new NotImplementedException();
 
     public Task AbandonMessageAsync(ReceivedBusMessage<TPayload> message, CancellationToken cancellationToken = default)

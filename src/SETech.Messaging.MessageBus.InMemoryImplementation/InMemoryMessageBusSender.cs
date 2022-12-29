@@ -5,6 +5,11 @@ namespace SETech.Messaging.MessageBus.InMemoryImplementation;
 
 public class InMemoryMessageBusSender<TPayload> : IMessageBusSender<TPayload>
 {
+    public void Dispose()
+    {
+        throw new NotImplementedException();
+    }
+
     public Task CancelScheduledMessageAsync(long sequenceNumber, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
