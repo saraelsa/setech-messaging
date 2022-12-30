@@ -10,11 +10,6 @@ public class InMemoryMessageBusClient : IMessageBusClient
 {
     public InMemoryMessageBus Bus { get; protected init; }
 
-    public InMemoryMessageBusClient()
-    {
-        Bus = new InMemoryMessageBus();
-    }
-
     public InMemoryMessageBusClient(InMemoryMessageBus bus)
     {
         Bus = bus;
