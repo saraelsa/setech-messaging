@@ -2,16 +2,17 @@ using SETech.Messaging.MessageBus.Primitives;
 
 namespace SETech.Messaging.MessageBus.InMemoryImplementation.Bus;
 
+/// <summary>The <see cref="InMemoryTopic"/> is a message topic that lives in-memory.</summary>
 public class InMemoryTopic<TPayload> : InMemoryQueue<TPayload>
 {
     protected IDictionary<string, InMemoryQueue<TPayload>> _subscriptions =
         new Dictionary<string, InMemoryQueue<TPayload>>();
-    
+
     public IReadOnlyDictionary<string, InMemoryQueue<TPayload>> Subscriptions => _subscriptions.AsReadOnly();
 
     public InMemoryTopic(IDictionary<string, InMemoryQueue<TPayload>> subscriptions)
         : this(subscriptions, new InMemoryQueueOptions()) { }
-    
+
     public InMemoryTopic(IDictionary<string, InMemoryQueue<TPayload>> subscriptions, InMemoryQueueOptions options)
         : base(options)
     {
@@ -24,7 +25,7 @@ public class InMemoryTopic<TPayload> : InMemoryQueue<TPayload>
     {
         foreach (InMemoryQueue<TPayload> subscription in Subscriptions.Values)
             subscription.Publish(receivedMessage);
-        
+
         actions.Complete();
     }
 }
