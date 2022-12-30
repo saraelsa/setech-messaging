@@ -6,10 +6,14 @@ using SETech.Messaging.MessageBus.Sender;
 
 namespace SETech.Messaging.MessageBus.InMemoryImplementation.Implementations;
 
+/// <inheritdoc />
 public class InMemoryMessageBusClient : IMessageBusClient
 {
+    /// <summary>The <see cref="InMemoryMessageBus"/> this client is for.</summary>
     public InMemoryMessageBus Bus { get; protected init; }
 
+    /// <summary>Creates an <see cref="InMemoryMessageBusClient"/> using the specified bus.</summary>
+    /// <param name="bus">The <see cref="InMemoryMessageBus"/> to create this client for.</param>
     public InMemoryMessageBusClient(InMemoryMessageBus bus)
     {
         Bus = bus;
