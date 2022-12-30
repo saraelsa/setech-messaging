@@ -48,9 +48,12 @@ public sealed class MessageLock
             return;
         }
 
-        _expired = true;
+        if (!_cleared)
+        {
+            _expired = true;
 
-        if (OnExpire is not null)
-            OnExpire(this, EventArgs.Empty);
+            if (OnExpire is not null)
+                OnExpire(this, EventArgs.Empty);
+        }
     }
 }
