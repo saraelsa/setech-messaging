@@ -89,34 +89,6 @@ public interface IMessageBusReceiver<TPayload> : IDisposable
     /// </exception>
     public Task AbandonMessageAsync(ReceivedBusMessage<TPayload> message, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    ///     Defers a message to be received later with the <see cref="ReceiveDeferredMessageAsync"/> method using its
-    ///     sequence number.
-    /// </summary>
-    /// <remarks>This method is only valid if the receive mode is <see cref="ReceiveMode.PeekLock"/>.</remarks>
-    /// <param name="message">The <see cref="ReceivedBusMessage{TPayload}"/> to defer.</param>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while deferring the message.</param>
-    /// <exception cref="LockExpiredException">Thrown when the lock on the message has already expired.</exception>
-    /// <exception cref="NotSupportedException">
-    ///     Thrown when the receive mode is not <see cref="ReceiveMode.PeekLock"/>.
-    /// </exception>
-    public Task DeferMessageAsync(ReceivedBusMessage<TPayload> message, CancellationToken cancellationToken = default);
-
-    /// <summary>Receives a deferred message in the queue or subscription.</summary>
-    /// <param name="sequenceNumber">The sequence number of the deferred message to receive.</param>
-    /// <param name="cancellationToken">
-    ///     A <see cref="CancellationToken"/> to observe while receiving the deferred message.
-    /// </param>
-    /// <exception cref="MessageNotFoundException">
-    ///     Thrown when the message with the specified sequence number is not found.
-    /// </exception>
-    /// <returns>The <see cref="ReceivedBusMessage{TPayload}"/> that has been received.</returns>
-    public Task<ReceivedBusMessage<TPayload>> ReceiveDeferredMessageAsync
-    (
-        long sequenceNumber,
-        CancellationToken cancellationToken = default
-    );
-
     /// <summary>Moves a message to the dead-letter queue.</summary>
     /// <remarks>This method is only valid if the receive mode is <see cref="ReceiveMode.PeekLock"/>.</remarks>
     /// <param name="message">The <see cref="ReceivedBusMessage{TPayload}"/> to move to the dead-letter queue.</param>
@@ -142,6 +114,34 @@ public interface IMessageBusReceiver<TPayload> : IDisposable
         ReceivedBusMessage<TPayload> message,
         string reason,
         string description,
+        CancellationToken cancellationToken = default
+    );
+
+    /// <summary>
+    ///     Defers a message to be received later with the <see cref="ReceiveDeferredMessageAsync"/> method using its
+    ///     sequence number.
+    /// </summary>
+    /// <remarks>This method is only valid if the receive mode is <see cref="ReceiveMode.PeekLock"/>.</remarks>
+    /// <param name="message">The <see cref="ReceivedBusMessage{TPayload}"/> to defer.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while deferring the message.</param>
+    /// <exception cref="LockExpiredException">Thrown when the lock on the message has already expired.</exception>
+    /// <exception cref="NotSupportedException">
+    ///     Thrown when the receive mode is not <see cref="ReceiveMode.PeekLock"/>.
+    /// </exception>
+    public Task DeferMessageAsync(ReceivedBusMessage<TPayload> message, CancellationToken cancellationToken = default);
+
+    /// <summary>Receives a deferred message in the queue or subscription.</summary>
+    /// <param name="sequenceNumber">The sequence number of the deferred message to receive.</param>
+    /// <param name="cancellationToken">
+    ///     A <see cref="CancellationToken"/> to observe while receiving the deferred message.
+    /// </param>
+    /// <exception cref="MessageNotFoundException">
+    ///     Thrown when the message with the specified sequence number is not found.
+    /// </exception>
+    /// <returns>The <see cref="ReceivedBusMessage{TPayload}"/> that has been received.</returns>
+    public Task<ReceivedBusMessage<TPayload>> ReceiveDeferredMessageAsync
+    (
+        long sequenceNumber,
         CancellationToken cancellationToken = default
     );
 }
