@@ -25,16 +25,15 @@ public class InMemoryQueue<TPayload>
 
     public InMemoryQueue<TPayload>? DeadLetterQueue { get; protected init; }
 
-    public InMemoryQueue()
-        : this(isDeadLetterQueue: false)
-    { }
+    public InMemoryQueue(InMemoryQueueOptions options)
+        : this(options, isDeadLetterQueue: false) { }
 
-    protected InMemoryQueue(bool isDeadLetterQueue)
+    protected InMemoryQueue(InMemoryQueueOptions options, bool isDeadLetterQueue)
     {
         IsDeadLetterQueue = isDeadLetterQueue;
 
         if (!IsDeadLetterQueue)
-            DeadLetterQueue = new (isDeadLetterQueue: true);
+            DeadLetterQueue = new (options, isDeadLetterQueue: true);
     }
 
     public void Publish(BusMessage<TPayload> message)

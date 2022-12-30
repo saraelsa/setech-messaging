@@ -2,7 +2,10 @@ namespace SETech.Messaging.MessageBus.InMemoryImplementation.Bus;
 
 public class InMemoryMessageBus
 {
-    protected IDictionary<string, InMemoryQueue<object>> _queues = new Dictionary<string, InMemoryQueue<object>>();
+    public IReadOnlyDictionary<string, object> Queues { get; protected init; }
 
-    public IReadOnlyDictionary<string, InMemoryQueue<object>> Queues => _queues.AsReadOnly();
+    public InMemoryMessageBus(IDictionary<string, object> queues)
+    {
+        Queues = queues.AsReadOnly();
+    }
 }
