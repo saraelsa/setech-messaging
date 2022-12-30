@@ -67,9 +67,9 @@ public interface IMessageBusReceiver<TPayload> : IDisposable
     /// <param name="fromSequenceNumber">The minimum sequence number of the messages to receive.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while peeking the next message.</param>
     /// <returns>
-    ///     The <see cref="IReadOnlyList{ReceivedBusMessage{TPayload}}"/> of messages that have been received.
+    ///     The <see cref="IReadOnlyCollection{ReceivedBusMessage{TPayload}}"/> of messages that have been received.
     /// </returns>
-    public Task<IReadOnlyList<ReceivedBusMessage<TPayload>>> PeekMessagesAsync
+    public Task<IReadOnlyCollection<ReceivedBusMessage<TPayload>>> PeekMessagesAsync
     (
         int maxMessages,
         long? fromSequenceNumber = default,
