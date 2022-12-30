@@ -1,4 +1,4 @@
-namespace SETech.Messaging.MessageBus.InMemoryImplementation.Bus.FluentFactory;
+namespace SETech.Messaging.MessageBus.InMemoryImplementation.Bus.FluentBuilder;
 
 public class InMemoryTopicBuilder<TPayload>
 {
