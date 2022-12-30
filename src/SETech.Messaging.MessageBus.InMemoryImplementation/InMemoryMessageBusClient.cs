@@ -1,4 +1,5 @@
 using SETech.Messaging.MessageBus.Client;
+using SETech.Messaging.MessageBus.InMemoryImplementation.Bus;
 using SETech.Messaging.MessageBus.Primitives;
 using SETech.Messaging.MessageBus.Receiver;
 using SETech.Messaging.MessageBus.Sender;
@@ -7,19 +8,55 @@ namespace SETech.Messaging.MessageBus.InMemoryImplementation;
 
 public class InMemoryMessageBusClient : IMessageBusClient
 {
-    public void Dispose()
+    public InMemoryMessageBus Bus { get; protected init; }
+
+    public InMemoryMessageBusClient()
     {
-        throw new NotImplementedException();
+        Bus = new InMemoryMessageBus();
     }
 
-    public IMessageBusReceiver<TPayload> CreateReceiver<TPayload>(string queueName)
+    public InMemoryMessageBusClient(InMemoryMessageBus bus)
     {
-        throw new NotImplementedException();
+        Bus = bus;
     }
 
-    public IMessageBusReceiver<TPayload> CreateReceiver<TPayload>(string topicName, string subscriptionName)
+    public void Dispose() { }
+
+    public IMessageBusReceiver<TPayload> CreateReceiver<TPayload>(string queueName) =>
+        CreateReceiver<TPayload>(queueName, new ReceiverOptions());
+
+    public IMessageBusReceiver<TPayload> CreateReceiver<TPayload>(string queueName, ReceiverOptions options)
     {
-        throw new NotImplementedException();
+        InMemoryQueue<TPayload> queue =
+            Bus.Queues[queueName] as InMemoryQueue<TPayload> ?? throw new PayloadTypeMismatchException();
+
+        InMemoryMessageBusReceiver<TPayload> receiver = new (queue, options);
+
+        return receiver;
+    }
+
+    public IMessageBusReceiver<TPayload> CreateReceiver<TPayload>(string topicName, string subscriptionName) =>
+        CreateReceiver<TPayload>(topicName, subscriptionName, new ReceiverOptions());
+
+    public IMessageBusReceiver<TPayload> CreateReceiver<TPayload>
+    (
+        string topicName,
+        string subscriptionName,
+        ReceiverOptions options
+    )
+    {
+        InMemoryQueue<TPayload> topicQueue =
+            Bus.Queues[topicName] as InMemoryQueue<TPayload> ?? throw new PayloadTypeMismatchException();
+        
+        InMemoryTopic<TPayload> topic =
+            topicQueue as InMemoryTopic<TPayload>
+                ?? throw new InvalidOperationException(string.Format("The queue {0} is not a topic.", topicName));
+            
+        InMemoryQueue<TPayload> subscription = topic.Subscriptions[subscriptionName];
+
+        InMemoryMessageBusReceiver<TPayload> receiver = new (subscription, options);
+
+        return receiver;
     }
 
     public IMessageBusReplyReceiver<TPayload> CreateReplyReceiver<TPayload>(string queueName)

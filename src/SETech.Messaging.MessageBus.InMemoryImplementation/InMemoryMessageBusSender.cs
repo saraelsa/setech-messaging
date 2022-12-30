@@ -1,3 +1,4 @@
+using SETech.Messaging.MessageBus.InMemoryImplementation.Bus;
 using SETech.Messaging.MessageBus.Primitives;
 using SETech.Messaging.MessageBus.Sender;
 
@@ -5,10 +6,14 @@ namespace SETech.Messaging.MessageBus.InMemoryImplementation;
 
 public class InMemoryMessageBusSender<TPayload> : IMessageBusSender<TPayload>
 {
-    public void Dispose()
+    protected InMemoryQueue<TPayload> Queue { get; init; }
+    
+    public InMemoryMessageBusSender(InMemoryQueue<TPayload> queue)
     {
-        throw new NotImplementedException();
+        Queue = queue;
     }
+
+    public void Dispose() { }
 
     public Task CancelScheduledMessageAsync(long sequenceNumber, CancellationToken cancellationToken = default)
     {

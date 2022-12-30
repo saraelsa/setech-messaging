@@ -23,7 +23,7 @@ public class InMemoryQueue<TPayload>
 
     public bool IsDeadLetterQueue { get; protected init; }
 
-    protected InMemoryQueue<TPayload>? DeadLetterQueue { get; }
+    public InMemoryQueue<TPayload>? DeadLetterQueue { get; protected init; }
 
     public InMemoryQueue()
         : this(isDeadLetterQueue: false)
