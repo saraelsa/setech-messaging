@@ -2,7 +2,7 @@ using SETech.Messaging.MessageBus.InMemoryImplementation.Bus;
 using SETech.Messaging.MessageBus.Primitives;
 using SETech.Messaging.MessageBus.Sender;
 
-namespace SETech.Messaging.MessageBus.InMemoryImplementation;
+namespace SETech.Messaging.MessageBus.InMemoryImplementation.Implementations;
 
 public class InMemoryMessageBusSender<TPayload> : IMessageBusSender<TPayload>
 {

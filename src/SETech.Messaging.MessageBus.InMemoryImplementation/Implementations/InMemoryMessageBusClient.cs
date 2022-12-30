@@ -4,7 +4,7 @@ using SETech.Messaging.MessageBus.Primitives;
 using SETech.Messaging.MessageBus.Receiver;
 using SETech.Messaging.MessageBus.Sender;
 
-namespace SETech.Messaging.MessageBus.InMemoryImplementation;
+namespace SETech.Messaging.MessageBus.InMemoryImplementation.Implementations;
 
 public class InMemoryMessageBusClient : IMessageBusClient
 {

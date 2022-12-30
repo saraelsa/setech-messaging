@@ -2,7 +2,7 @@ using SETech.Messaging.MessageBus.InMemoryImplementation.Bus;
 using SETech.Messaging.MessageBus.Primitives;
 using SETech.Messaging.MessageBus.Receiver;
 
-namespace SETech.Messaging.MessageBus.InMemoryImplementation;
+namespace SETech.Messaging.MessageBus.InMemoryImplementation.Implementations;
 
 /// <summary>
 ///     The <see cref="InMemoryMessageBusReceiver{TPayload}"/> receives messages from an in-memory queue or subscription to
