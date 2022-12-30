@@ -22,12 +22,32 @@ public interface IMessageBusClient : IDisposable
     /// <returns>The created <see cref="IMessageBusReceiver{TPayload}"/>.</returns>
     public IMessageBusReceiver<TPayload> CreateReceiver<TPayload>(string queueName);
 
+    /// <summary>Creates a <see cref="IMessageBusReceiver{TPayload}"/> for a queue.</summary>
+    /// <typeparam name="TPayload">The payload type to receive.</typeparam>
+    /// <param name="queueName">The name of the queue to receive messages from.</param>
+    /// <param name="options">The options to use for this receiver.</param>
+    /// <returns>The created <see cref="IMessageBusReceiver{TPayload}"/>.</returns>
+    public IMessageBusReceiver<TPayload> CreateReceiver<TPayload>(string queueName, ReceiverOptions options);
+
     /// <summary>Creates a <see cref="IMessageBusReceiver{TPayload}"/> for a subscription to a topic.</summary>
     /// <typeparam name="TPayload">The payload type to receive.</typeparam>
     /// <param name="topicName">The name of the topic to receive messages from.</param>
     /// <param name="subscriptionName">The name of the subscription to receive messages from.</param>
     /// <returns>The created <see cref="IMessageBusReceiver{TPayload}"/>.</returns>
     public IMessageBusReceiver<TPayload> CreateReceiver<TPayload>(string topicName, string subscriptionName);
+
+    /// <summary>Creates a <see cref="IMessageBusReceiver{TPayload}"/> for a subscription to a topic.</summary>
+    /// <typeparam name="TPayload">The payload type to receive.</typeparam>
+    /// <param name="topicName">The name of the topic to receive messages from.</param>
+    /// <param name="subscriptionName">The name of the subscription to receive messages from.</param>
+    /// <param name="options">The options to use for this receiver.</param>
+    /// <returns>The created <see cref="IMessageBusReceiver{TPayload}"/>.</returns>
+    public IMessageBusReceiver<TPayload> CreateReceiver<TPayload>
+    (
+        string topicName,
+        string subscriptionName,
+        ReceiverOptions options
+    );
 
     /// <summary>Creates a <see cref="IMessageBusReplyReceiver{TPayload}"/> for a queue.</summary>
     /// <typeparam name="TPayload">The payload type to receive.</typeparam>
