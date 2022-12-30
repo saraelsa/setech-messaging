@@ -6,12 +6,12 @@ namespace SETech.Messaging.MessageBus;
 public class MessageNotFoundException : Exception
 {
     /// <param cref="sequenceNumber">The sequence number of the message that was not found.</param>
-    public MessageNotFoundException(ulong sequenceNumber)
+    public MessageNotFoundException(long sequenceNumber)
         : base(string.Format("The message with sequence number {0} was not found.", sequenceNumber))
     {
         SequenceNumber = sequenceNumber;
     }
 
     /// <summary>The sequence number of the message that was not found.</summary>
-    public ulong? SequenceNumber { get; init; }
+    public long? SequenceNumber { get; init; }
 }
