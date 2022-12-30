@@ -9,38 +9,6 @@ public interface IMessageBusReceiver<TPayload> : IDisposable
     /// <summary>The mode to receive messages with. This controls how messages are settled.</summary>
     public ReceiveMode ReceiveMode { get; }
 
-    /// <summary>Receives the next message in the queue or subscription.</summary>
-    /// <remarks>If there is no message in the queue or subscription, this method waits until a message arrives.</remarks>
-    /// <param name="cancellationToken">
-    ///     A <see cref="CancellationToken"/> to observe while receiving the next message.
-    /// </param>
-    /// <returns>The <see cref="ReceivedBusMessage{TPayload}"/> that has been received.</returns>
-    public Task<ReceivedBusMessage<TPayload>> ReceiveMessageAsync(CancellationToken cancellationToken = default);
-
-    /// <summary>Renews the lock on a message.</summary>
-    /// <remarks>This method is only valid if the receive mode is <see cref="ReceiveMode.PeekLock"/>.</remarks>
-    /// <param name="message">The <see cref="ReceivedBusMessage{TPayload}"/> whose lock should be renewed.</param>
-    /// <param name="cancellationToken">
-    ///     A <see cref="CancellationToken"/> to observe while renewing the lock on the message.
-    /// </param>
-    /// <exception cref="LockExpiredException">Thrown when the lock on the message has already expired.</exception>
-    /// <exception cref="NotSupportedException">
-    ///     Thrown when the receive mode is not <see cref="ReceiveMode.PeekLock"/>.
-    /// </exception>
-    public Task RenewMessageLockAsync(ReceivedBusMessage<TPayload> message, CancellationToken cancellationToken = default);
-
-    /// <summary>Settles a received message.</summary>
-    /// <remarks>This method is only valid if the receive mode is <see cref="ReceiveMode.PeekLock"/>.</remarks>
-    /// <param name="message">The <see cref="ReceivedBusMessage{TPayload}"/> to mark as complete.</param>
-    /// <param name="cancellationToken">
-    ///     A <see cref="CancellationToken"/> to observe while marking the message as complete.
-    /// </param>
-    /// <exception cref="LockExpiredException">Thrown when the lock on the message has already expired.</exception>
-    /// <exception cref="NotSupportedException">
-    ///     Thrown when the receive mode is not <see cref="ReceiveMode.PeekLock"/>.
-    /// </exception>
-    public Task CompleteMessageAsync(ReceivedBusMessage<TPayload> message, CancellationToken cancellationToken = default);
-
     /// <summary>
     ///     Receives a message in the queue or subscription without locking it. This message is open to being locked and
     ///     settled by this or another application. The first call returns the first message in the queue. Each subsequent
@@ -75,6 +43,38 @@ public interface IMessageBusReceiver<TPayload> : IDisposable
         long? fromSequenceNumber = default,
         CancellationToken cancellationToken = default
     );
+
+    /// <summary>Receives the next message in the queue or subscription.</summary>
+    /// <remarks>If there is no message in the queue or subscription, this method waits until a message arrives.</remarks>
+    /// <param name="cancellationToken">
+    ///     A <see cref="CancellationToken"/> to observe while receiving the next message.
+    /// </param>
+    /// <returns>The <see cref="ReceivedBusMessage{TPayload}"/> that has been received.</returns>
+    public Task<ReceivedBusMessage<TPayload>> ReceiveMessageAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Renews the lock on a message.</summary>
+    /// <remarks>This method is only valid if the receive mode is <see cref="ReceiveMode.PeekLock"/>.</remarks>
+    /// <param name="message">The <see cref="ReceivedBusMessage{TPayload}"/> whose lock should be renewed.</param>
+    /// <param name="cancellationToken">
+    ///     A <see cref="CancellationToken"/> to observe while renewing the lock on the message.
+    /// </param>
+    /// <exception cref="LockExpiredException">Thrown when the lock on the message has already expired.</exception>
+    /// <exception cref="NotSupportedException">
+    ///     Thrown when the receive mode is not <see cref="ReceiveMode.PeekLock"/>.
+    /// </exception>
+    public Task RenewMessageLockAsync(ReceivedBusMessage<TPayload> message, CancellationToken cancellationToken = default);
+
+    /// <summary>Settles a received message.</summary>
+    /// <remarks>This method is only valid if the receive mode is <see cref="ReceiveMode.PeekLock"/>.</remarks>
+    /// <param name="message">The <see cref="ReceivedBusMessage{TPayload}"/> to mark as complete.</param>
+    /// <param name="cancellationToken">
+    ///     A <see cref="CancellationToken"/> to observe while marking the message as complete.
+    /// </param>
+    /// <exception cref="LockExpiredException">Thrown when the lock on the message has already expired.</exception>
+    /// <exception cref="NotSupportedException">
+    ///     Thrown when the receive mode is not <see cref="ReceiveMode.PeekLock"/>.
+    /// </exception>
+    public Task CompleteMessageAsync(ReceivedBusMessage<TPayload> message, CancellationToken cancellationToken = default);
 
     /// <summary>
     ///     Releases a received message without marking it as complete.
