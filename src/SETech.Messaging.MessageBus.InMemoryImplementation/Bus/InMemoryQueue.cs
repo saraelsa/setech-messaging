@@ -6,9 +6,9 @@ public class InMemoryQueue<TPayload>
 {
     public delegate void ReceiverFunctionDelegate(ReceivedBusMessage<TPayload> message, ReceivedMessageActions actions);
 
-    public TimeSpan LockDuration { get; protected set; } = TimeSpan.FromSeconds(30);
+    public TimeSpan LockDuration { get; protected init; }
     
-    public int MaximumDeliveryAttempts { get; protected set; } = 10;
+    public int MaximumDeliveryAttempts { get; protected init; }
 
     protected long LastSequenceNumber { get; set; } = 0;
 
@@ -31,6 +31,9 @@ public class InMemoryQueue<TPayload>
     protected InMemoryQueue(InMemoryQueueOptions options, bool isDeadLetterQueue)
     {
         IsDeadLetterQueue = isDeadLetterQueue;
+
+        LockDuration = options.LockDuration;
+        MaximumDeliveryAttempts = options.MaxDeliveryAttempts;
 
         if (!IsDeadLetterQueue)
             DeadLetterQueue = new (options, isDeadLetterQueue: true);
