@@ -50,7 +50,7 @@ public sealed class MessageLock
 
         _expired = true;
 
-        if (OnExpire != null)
+        if (OnExpire is not null)
             OnExpire(this, EventArgs.Empty);
     }
 }
