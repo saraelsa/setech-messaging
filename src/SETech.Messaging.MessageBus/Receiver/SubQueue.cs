@@ -1,6 +1,6 @@
 namespace SETech.Messaging.MessageBus.Receiver;
 
-/// <summary>The subqueue of the queue to receive from.</summary>
+/// <summary>The sub-queue of the queue to receive from.</summary>
 public enum SubQueue
 {
     /// <summary>Receive from the main queue.</summary>
