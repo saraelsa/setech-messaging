@@ -22,7 +22,7 @@ public class InMemoryMessageBusReceiver<TPayload> : IMessageBusReceiver<TPayload
     /// <summary>
     ///     The current pointer used for sequential peeking. The next peeked message with an implied minimum sequence number
     ///     will use this value as the minimum sequence number.
-    /// </summary>    
+    /// </summary>
     protected long PeekPointer { get; } = 0;
 
     /// <summary>Creates an <see cref="InMemoryMessageBusReceiver{TPayload}"/>.</summary>
@@ -37,7 +37,7 @@ public class InMemoryMessageBusReceiver<TPayload> : IMessageBusReceiver<TPayload
                 SubQueue.DeadLetter => queue.DeadLetterQueue!,
                 _ => throw new NotSupportedException()
             };
-        
+
         ReceiveMode = options.ReceiveMode;
     }
 
@@ -110,7 +110,7 @@ public class InMemoryMessageBusReceiver<TPayload> : IMessageBusReceiver<TPayload
 
         if (!InProcessMessageActions.TryGetValue(sequenceNumber, out actions))
             throw new LockExpiredException();
-        
+
         InProcessMessageActions.Remove(sequenceNumber);
 
         return actions;

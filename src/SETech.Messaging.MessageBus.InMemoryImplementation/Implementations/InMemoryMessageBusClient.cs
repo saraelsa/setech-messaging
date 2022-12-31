@@ -46,11 +46,11 @@ public class InMemoryMessageBusClient : IMessageBusClient
     {
         InMemoryQueue<TPayload> topicQueue =
             Bus.Queues[topicName] as InMemoryQueue<TPayload> ?? throw new PayloadTypeMismatchException();
-        
+
         InMemoryTopic<TPayload> topic =
             topicQueue as InMemoryTopic<TPayload>
                 ?? throw new InvalidOperationException(string.Format("The queue {0} is not a topic.", topicName));
-            
+
         InMemoryQueue<TPayload> subscription = topic.Subscriptions[subscriptionName];
 
         InMemoryMessageBusReceiver<TPayload> receiver = new (subscription, options);

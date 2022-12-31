@@ -10,7 +10,7 @@ public class InMemoryMessageBusSender<TPayload> : IMessageBusSender<TPayload>
 {
     /// <summary>The <see cref="InMemoryQueue<TPayload>"/> to send messages to.</summary>
     protected InMemoryQueue<TPayload> Queue { get; init; }
-    
+
     public InMemoryMessageBusSender(InMemoryQueue<TPayload> queue)
     {
         Queue = queue;
@@ -29,7 +29,7 @@ public class InMemoryMessageBusSender<TPayload> : IMessageBusSender<TPayload>
     {
         foreach (BusMessage<TPayload> message in messages)
             Queue.Publish(message);
-        
+
         return Task.CompletedTask;
     }
 

@@ -45,7 +45,7 @@ public sealed class MessageLock
 
             protectedAction();
         };
-    
+
     /// <summary>Renews the lock for <see cref="LockDuration"/>.</summary>
     public void Renew()
     {

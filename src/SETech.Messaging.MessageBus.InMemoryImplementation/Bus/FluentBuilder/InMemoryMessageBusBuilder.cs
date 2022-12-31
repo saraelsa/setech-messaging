@@ -22,7 +22,7 @@ public class InMemoryMessageBusBuilder
     {
         if (Built)
             throw new InvalidOperationException("This builder was already used.");
-        
+
         Built = true;
 
         InMemoryMessageBus messageBus = new (_queues);

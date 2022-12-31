@@ -10,7 +10,7 @@ public class InMemoryQueue<TPayload>
 
     /// <summary>The duration for which received messages are locked.</summary>
     public TimeSpan LockDuration { get; protected init; }
-    
+
     /// <summary>
     ///     The maximum number of times it is attempted to deliver a message before it is sent to the dead-letter queue.
     /// </summary>
@@ -97,7 +97,7 @@ public class InMemoryQueue<TPayload>
 
         if (sequenceNumber == default)
             return null;
-        
+
         StoredMessage<TPayload> message = Messages[sequenceNumber];
 
         ReceivedBusMessage<TPayload> receivedMessage = new ()
