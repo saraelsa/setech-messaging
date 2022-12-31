@@ -214,6 +214,8 @@ public class InMemoryQueue<TPayload>
     {
         Messages[message.SequenceNumber] = message;
         MessagesSequenceNumberQueue.Enqueue(message.SequenceNumber);
+
+        TryProcessNext();
     }
 
     /// <summary>Defers a message by keeping it in the list of messages but not maintaining it in the queue.</summary>
