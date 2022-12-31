@@ -14,7 +14,11 @@ public interface IMessageBusSender<TPayload> : IDisposable
     /// <summary>Sends multiple messages to the queue or subscription.</summary>
     /// <param name="messages">The messages to send.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while sending the message.</param>
-    public Task SendMessagesAsync(IEnumerable<BusMessage<TPayload>> message, CancellationToken cancellationToken = default);
+    public Task SendMessagesAsync
+    (
+        IEnumerable<BusMessage<TPayload>> messages,
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>Schedules a message to be sent to the queue or subscription at the specified time.</summary>
     /// <param name="message">The <see cref="BusMessage{TPayload}"/> to send.</param>
