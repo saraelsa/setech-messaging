@@ -18,9 +18,19 @@ public class InMemoryMessageBusSender<TPayload> : IMessageBusSender<TPayload>
 
     public void Dispose() { }
 
-    public Task CancelScheduledMessageAsync(long sequenceNumber, CancellationToken cancellationToken = default)
+    public Task SendMessageAsync(BusMessage<TPayload> message, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        Queue.Publish(message);
+
+        return Task.CompletedTask;
+    }
+
+    public Task SendMessagesAsync(IEnumerable<BusMessage<TPayload>> messages, CancellationToken cancellationToken = default)
+    {
+        foreach (BusMessage<TPayload> message in messages)
+            Queue.Publish(message);
+        
+        return Task.CompletedTask;
     }
 
     public Task<long> ScheduleMessageAsync
@@ -33,12 +43,7 @@ public class InMemoryMessageBusSender<TPayload> : IMessageBusSender<TPayload>
         throw new NotImplementedException();
     }
 
-    public Task SendMessageAsync(BusMessage<TPayload> message, CancellationToken cancellationToken = default)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task SendMessagesAsync(IEnumerable<BusMessage<TPayload>> message, CancellationToken cancellationToken = default)
+    public Task CancelScheduledMessageAsync(long sequenceNumber, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
