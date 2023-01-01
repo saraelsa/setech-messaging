@@ -169,6 +169,14 @@ public class InMemoryMessageBusReceiver<TPayload> : IMessageBusReceiver<TPayload
         CancellationToken cancellationToken = default
     )
     {
-        throw new NotImplementedException();
+        TaskCompletionSource<ReceivedBusMessage<TPayload>> taskCompletionSource = new (cancellationToken);
+
+        Queue.ReceiveDeferred(sequenceNumber, (message, actions) =>
+        {
+            HandleReceivedMessage(message, actions);
+            taskCompletionSource.SetResult(message);
+        });
+
+        return taskCompletionSource.Task;
     }
 }

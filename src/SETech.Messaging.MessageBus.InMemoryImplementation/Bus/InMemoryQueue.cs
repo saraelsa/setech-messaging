@@ -89,6 +89,31 @@ public class InMemoryQueue<TPayload>
         TryProcessNext();
     }
 
+    /// <summary>Receives a deferred message from this queue. A receiver function is called with the message.</summary>
+    /// <param name="sequenceNumber">The sequence number of the deferred message to receive.</param>
+    /// <param name="receiverFunction">The function to call with the received message.</param>
+    /// <exception cref="MessageNotFoundException">
+    ///     Thrown when no message with the specified sequence number was found.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    ///     Thrown when the message with the specified sequence number was not deferred.
+    /// </exception>
+    public void ReceiveDeferred(long sequenceNumber, ReceiverFunctionDelegate receiverFunction)
+    {
+        if (!Messages.ContainsKey(sequenceNumber))
+            throw new MessageNotFoundException(sequenceNumber);
+
+        StoredMessage<TPayload> message = Messages[sequenceNumber];
+
+        if (!message.Deferred)
+            throw new InvalidOperationException
+            (
+                "A message that has not been deferred can not be received as a deferred message."
+            );
+
+        ProcessMessageForReceiver(sequenceNumber, receiverFunction);
+    }
+
     /// <summary>Peeks into a message without locking it.</summary>
     /// <param name="fromSequenceNumber">The minimum sequence number of the message to peek.</param>
     public ReceivedBusMessage<TPayload>? Peek(long fromSequenceNumber)
@@ -138,35 +163,42 @@ public class InMemoryQueue<TPayload>
 
         if (MessagesSequenceNumberQueue.Count > 0 && ReceiverFunctions.Count > 0)
         {
-            StoredMessage<TPayload> message = Messages[MessagesSequenceNumberQueue.Dequeue()];
+            long sequenceNumber = MessagesSequenceNumberQueue.Dequeue();
             ReceiverFunctionDelegate receiverFunction = ReceiverFunctions.Dequeue();
 
-            Messages.Remove(message.SequenceNumber);
-
-            ReceivedBusMessage<TPayload> receivedMessage = new ()
-            {
-                MessageId = message.MessageId,
-                SequenceNumber = message.SequenceNumber,
-                TimeToLive = message.TimeToLive,
-                Payload = message.Payload
-            };
-
-            MessageLock messageLock = new (LockDuration);
-
-            messageLock.OnExpire += (_, _) => RetryFailedMessage(message);
-
-            ReceivedMessageActions receivedMessageActions = new ()
-            {
-                RenewLock = messageLock.Renew,
-                Complete = messageLock.CreateHandler(() => { }),
-                Abandon = () =>  messageLock.CreateHandler(() => AbandonMessage(message)),
-                Defer = () => messageLock.CreateHandler(() => DeferMessage(message)),
-                DeadLetter = (reason, description) =>
-                    messageLock.CreateHandler(() => DeadLetterMessage(message, reason, description))
-            };
-
-            receiverFunction(receivedMessage, receivedMessageActions);
+            ProcessMessageForReceiver(sequenceNumber, receiverFunction);
         }
+    }
+
+    protected void ProcessMessageForReceiver(long sequenceNumber, ReceiverFunctionDelegate receiverFunction)
+    {
+        StoredMessage<TPayload> message = Messages[sequenceNumber];
+
+        Messages.Remove(message.SequenceNumber);
+
+        ReceivedBusMessage<TPayload> receivedMessage = new ()
+        {
+            MessageId = message.MessageId,
+            SequenceNumber = message.SequenceNumber,
+            TimeToLive = message.TimeToLive,
+            Payload = message.Payload
+        };
+
+        MessageLock messageLock = new (LockDuration);
+
+        messageLock.OnExpire += (_, _) => RetryFailedMessage(message);
+
+        ReceivedMessageActions receivedMessageActions = new ()
+        {
+            RenewLock = messageLock.Renew,
+            Complete = messageLock.CreateHandler(() => { }),
+            Abandon = () =>  messageLock.CreateHandler(() => AbandonMessage(message)),
+            Defer = () => messageLock.CreateHandler(() => DeferMessage(message)),
+            DeadLetter = (reason, description) =>
+                messageLock.CreateHandler(() => DeadLetterMessage(message, reason, description))
+        };
+
+        receiverFunction(receivedMessage, receivedMessageActions);
     }
 
     /// <summary>
@@ -221,8 +253,12 @@ public class InMemoryQueue<TPayload>
 
     /// <summary>Defers a message by keeping it in the list of messages but not maintaining it in the queue.</summary>
     /// <param name="message">The message to defer.</param>
-    protected void DeferMessage(StoredMessage<TPayload> message) =>
+    protected void DeferMessage(StoredMessage<TPayload> message)
+    {
+        message.Deferred = true;
+
         Messages.Add(message.SequenceNumber, message);
+    }
 
     /// <summary>Sends a message to the dead-letter queue.</summary>
     /// <param name="message">The message to dead-letter.</param>

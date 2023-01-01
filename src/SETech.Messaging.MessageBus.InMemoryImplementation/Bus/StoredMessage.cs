@@ -15,6 +15,8 @@ public class StoredMessage<TPayload> : BusMessage<TPayload>
     /// <summary>The number of times the message was unsuccesfully attempted to be delivered.</summary>
     public int DeliveryAttempts { get; set; } = 0;
 
+    public bool Deferred { get; set; } = false;
+
     /// <summary>Creates a <see cref="StoredMessage{TPayload}"/>.</summary>
     /// <param name="message">
     ///     The <see cref="BusMessage{TPayload}"/> to create this <see cref="StoredMessage{TPayload}"/> from.
