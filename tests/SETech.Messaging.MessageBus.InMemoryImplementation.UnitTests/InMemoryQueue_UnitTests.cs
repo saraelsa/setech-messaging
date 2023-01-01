@@ -16,7 +16,7 @@ public sealed class InMemoryQueue_UnitTests
     }
 
     [Fact]
-    public void SimpleSendAndReceive_SendFirst_Works()
+    public void SendAndReceive_SingleMessage_SendFirst_Works()
     {
         var (message, payload) = CreateTestMessage();
 
@@ -35,7 +35,7 @@ public sealed class InMemoryQueue_UnitTests
     }
 
     [Fact]
-    public void SimpleSendAndReceive_ReceiveFirst_Works()
+    public void SendAndReceive_SingleMessage_ReceiveFirst_Works()
     {
         var (message, payload) = CreateTestMessage();
 
@@ -51,5 +51,36 @@ public sealed class InMemoryQueue_UnitTests
 
         Assert.NotNull(receivedMessage);
         Assert.Equal(payload, receivedMessage.Payload);
+    }
+
+    [Fact]
+    public void SendAndReceive_MultipleMessages_Works()
+    {
+        var (message1, payload1) = CreateTestMessage();
+        var (message2, payload2) = CreateTestMessage();
+
+        ReceivedBusMessage<object>? receivedMessage1 = null;
+        ReceivedBusMessage<object>? receivedMessage2 = null;
+
+        testQueue.Publish(message1);
+        testQueue.Publish(message2);
+
+        testQueue.Receive((message, actions) =>
+        {
+            receivedMessage1 = message;
+            actions.Complete();
+        });
+
+        testQueue.Receive((message, actions) =>
+        {
+            receivedMessage2 = message;
+            actions.Complete();
+        });
+
+        Assert.NotNull(message1);
+        Assert.Equal(payload1, message1.Payload);
+  
+        Assert.NotNull(message2);
+        Assert.Equal(payload2, message2.Payload);
     }
 }
