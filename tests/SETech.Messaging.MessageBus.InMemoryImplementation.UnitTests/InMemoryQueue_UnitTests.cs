@@ -247,6 +247,8 @@ public sealed class InMemoryQueue_UnitTests
 
         ReceivedBusMessage<object>? receivedMessage = null;
 
+        testQueue.Publish(message);
+
         testQueue.Receive((message, actions) =>
         {
             actions.DeadLetter(deadLetterReason, deadLetterDescription);
