@@ -247,7 +247,7 @@ public class InMemoryQueue<TPayload>
     {
         StoredMessage<TPayload> message = Messages[sequenceNumber];
 
-        Messages.Remove(message.SequenceNumber);
+        message.Locked = true;
 
         ReceivedBusMessage<TPayload> receivedMessage = new ()
         {
@@ -264,7 +264,7 @@ public class InMemoryQueue<TPayload>
         ReceivedMessageActions receivedMessageActions = new ()
         {
             RenewLock = messageLock.Renew,
-            Complete = messageLock.CreateHandler(() => { }),
+            Complete = messageLock.CreateHandler(() => CompleteMessage(message)),
             Abandon = messageLock.CreateHandler(() => AbandonMessage(message)),
             Defer = messageLock.CreateHandler(() => DeferMessage(message)),
             DeadLetter = (reason, description) =>
@@ -320,15 +320,22 @@ public class InMemoryQueue<TPayload>
             return;
         }
 
-        Messages[message.SequenceNumber] = message;
+        message.Locked = false;
         MessagesSequenceNumberQueue.Enqueue(message.SequenceNumber);
+    }
+
+    /// <summary>Completes a message by removing it from the queue and the list of messages.</summary>
+    /// <param name="message">The message to complete.</param>
+    protected void CompleteMessage(StoredMessage<TPayload> message)
+    {
+        Messages.Remove(message.SequenceNumber);
     }
 
     /// <summary>Abandons a message by returning it to the queue.</summary>
     /// <param name="message">The message to abandon.</param>
     protected void AbandonMessage(StoredMessage<TPayload> message)
     {
-        Messages[message.SequenceNumber] = message;
+        message.Locked = false;
         MessagesSequenceNumberQueue.Enqueue(message.SequenceNumber);
 
         TryProcessNext();
@@ -338,9 +345,8 @@ public class InMemoryQueue<TPayload>
     /// <param name="message">The message to defer.</param>
     protected void DeferMessage(StoredMessage<TPayload> message)
     {
+        message.Locked = false;
         message.Deferred = true;
-
-        Messages.Add(message.SequenceNumber, message);
     }
 
     /// <summary>Sends a message to the dead-letter queue.</summary>
@@ -349,7 +355,9 @@ public class InMemoryQueue<TPayload>
     {
         if (IsDeadLetterQueue)
             throw new NotSupportedException("Messages in the dead letter queue can not be further dead lettered.");
-        
+
+        Messages.Remove(message.SequenceNumber);
+
         BusMessage<TPayload> deadLetteredMessage = new ()
         {
             MessageId = message.MessageId,

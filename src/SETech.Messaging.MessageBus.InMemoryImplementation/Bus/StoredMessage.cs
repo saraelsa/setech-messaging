@@ -18,6 +18,9 @@ public class StoredMessage<TPayload> : BusMessage<TPayload>
     /// <summary>Whether this message is deferred.</summary>
     public bool Deferred { get; set; } = false;
 
+    /// <summary>Whether this message is locked.</summary>
+    public bool Locked { get; set; } = false;
+
     /// <summary>The time this message is scheduled to be sent at, or null if it is not currently scheduled.</summary>
     public DateTimeOffset? ScheduledFor { get; set; } = null;
 
