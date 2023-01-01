@@ -288,12 +288,21 @@ public class InMemoryQueue<TPayload>
         else
             timeToLive = nextMessage.TimeToLive.Value;
 
-        if (DateTime.Now - nextMessage.Timestamp > timeToLive)
+        if (nextMessage.Timestamp + timeToLive > DateTimeOffset.Now)
         {
             MessagesSequenceNumberQueue.Dequeue();
             Messages.Remove(nextMessage.SequenceNumber);
 
-            DeadLetterQueue!.PublishInternal(nextMessage);
+            BusMessage<TPayload> deadLetteredMessage = new ()
+            {
+                MessageId = nextMessage.MessageId,
+                TimeToLive = null,
+                Payload = nextMessage.Payload,
+                DeadLetterReason = "TTLExpiredException",
+                DeadLetterDescription = null
+            };
+
+            DeadLetterQueue!.PublishInternal(deadLetteredMessage);
 
             DeadLetterExpiredMessages();
         }
