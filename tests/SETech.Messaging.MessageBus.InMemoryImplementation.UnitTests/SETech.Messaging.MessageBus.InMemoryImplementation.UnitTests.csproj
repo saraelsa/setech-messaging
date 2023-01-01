@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\SETech.Messaging.MessageBus.InMemoryImplementation\SETech.Messaging.MessageBus.InMemoryImplementation.csproj" />
+    <ProjectReference Include="..\..\src\SETech.Messaging.MessageBus\SETech.Messaging.MessageBus.csproj" />
   </ItemGroup>
 
 </Project>
