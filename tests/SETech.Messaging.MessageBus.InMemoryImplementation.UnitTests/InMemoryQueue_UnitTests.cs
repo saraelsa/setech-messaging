@@ -163,7 +163,70 @@ public sealed class InMemoryQueue_UnitTests
     }
 
     [Fact]
-    public void MessageExpiry_WorksAndSendsToDeadLetterQueue()
+    public void Scheduling_CurrentMessage_Sends()
+    {
+        var (message, payload) = CreateTestMessage();
+
+        ReceivedBusMessage<object>? receivedMessage = null;
+
+        testQueue.Schedule(message, DateTimeOffset.Now);
+
+        testQueue.Receive((message, actions) =>
+        {
+            receivedMessage = message;
+            actions.Complete();
+        });
+
+        Assert.NotNull(receivedMessage);
+        Assert.Equal(payload, receivedMessage.Payload);        
+    }
+
+    [Fact]
+    public void Scheduling_FutureMessage_DoesNotSendImmediately()
+    {
+        var (message, payload) = CreateTestMessage();
+
+        ReceivedBusMessage<object>? receivedMessage = null;
+
+        testQueue.Schedule(message, DateTimeOffset.Now.AddSeconds(5));
+
+        testQueue.Receive((message, actions) =>
+        {
+            receivedMessage = message;
+            actions.Complete();
+        });
+
+        Assert.Null(receivedMessage);
+    }
+
+    [Fact]
+    public void Scheduling_FutureMessage_AddsToMessages()
+    {
+        var (message, payload) = CreateTestMessage();
+
+        testQueue.Schedule(message, DateTimeOffset.Now.AddSeconds(5));
+
+        var receivedMessage = testQueue.Peek(fromSequenceNumber: 0);
+
+        Assert.NotNull(receivedMessage);
+    }
+
+    [Fact]
+    public void Scheduling_CancelFutureMessage_RemovesFromMessages()
+    {
+        var (message, payload) = CreateTestMessage();
+
+        long sequenceNumber = testQueue.Schedule(message, DateTimeOffset.Now.AddSeconds(5));
+
+        testQueue.CancelScheduledMessage(sequenceNumber);
+
+        var receivedMessage = testQueue.Peek(fromSequenceNumber: 0);
+
+        Assert.Null(receivedMessage);
+    }
+
+    [Fact]
+    public void DeadLettering_ExpiredMessage_SendsToDeadLetterQueue()
     {
         object payload = new ();
 
