@@ -167,12 +167,14 @@ public class InMemoryQueue<TPayload>
     /// <param name="fromSequenceNumber">The minimum sequence number of the message to peek.</param>
     public ReceivedBusMessage<TPayload>? Peek(long fromSequenceNumber)
     {
-        long sequenceNumber = Messages.Keys.FirstOrDefault(sequenceNumber => sequenceNumber > fromSequenceNumber);
+        long? sequenceNumber = Messages.Keys
+            .Select(key => new Nullable<long>(key))
+            .FirstOrDefault(sequenceNumber => sequenceNumber >= fromSequenceNumber);
 
-        if (sequenceNumber == default)
+        if (sequenceNumber is null)
             return null;
 
-        StoredMessage<TPayload> message = Messages[sequenceNumber];
+        StoredMessage<TPayload> message = Messages[sequenceNumber.Value];
 
         ReceivedBusMessage<TPayload> receivedMessage = new ()
         {
