@@ -279,6 +279,9 @@ public class InMemoryQueue<TPayload>
     {
         if (IsDeadLetterQueue)
             throw new NotSupportedException("Messages in the dead letter queue do not expire.");
+        
+        if (MessagesSequenceNumberQueue.Count == 0)
+            return;
 
         StoredMessage<TPayload> nextMessage = Messages[MessagesSequenceNumberQueue.Peek()];
 
