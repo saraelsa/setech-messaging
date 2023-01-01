@@ -16,75 +16,6 @@ public sealed class InMemoryQueue_UnitTests
     }
 
     [Fact]
-    public void SendAndReceive_SingleMessage_SendFirst_Works()
-    {
-        var (message, payload) = CreateTestMessage();
-
-        ReceivedBusMessage<object>? receivedMessage = null;
-
-        testQueue.Publish(message);
-
-        testQueue.Receive((message, actions) =>
-        {
-            receivedMessage = message;
-            actions.Complete();
-        });
-
-        Assert.NotNull(receivedMessage);
-        Assert.Equal(payload, receivedMessage.Payload);
-    }
-
-    [Fact]
-    public void SendAndReceive_SingleMessage_ReceiveFirst_Works()
-    {
-        var (message, payload) = CreateTestMessage();
-
-        ReceivedBusMessage<object>? receivedMessage = null;
-
-        testQueue.Receive((message, actions) =>
-        {
-            receivedMessage = message;
-            actions.Complete();
-        });
-
-        testQueue.Publish(message);
-
-        Assert.NotNull(receivedMessage);
-        Assert.Equal(payload, receivedMessage.Payload);
-    }
-
-    [Fact]
-    public void SendAndReceive_MultipleMessages_Works()
-    {
-        var (message1, payload1) = CreateTestMessage();
-        var (message2, payload2) = CreateTestMessage();
-
-        ReceivedBusMessage<object>? receivedMessage1 = null;
-        ReceivedBusMessage<object>? receivedMessage2 = null;
-
-        testQueue.Publish(message1);
-        testQueue.Publish(message2);
-
-        testQueue.Receive((message, actions) =>
-        {
-            receivedMessage1 = message;
-            actions.Complete();
-        });
-
-        testQueue.Receive((message, actions) =>
-        {
-            receivedMessage2 = message;
-            actions.Complete();
-        });
-
-        Assert.NotNull(receivedMessage1);
-        Assert.Equal(payload1, receivedMessage1.Payload);
-  
-        Assert.NotNull(receivedMessage2);
-        Assert.Equal(payload2, receivedMessage2.Payload);
-    }
-
-    [Fact]
     public void Peek_NoAvailableMessages_ReturnsNull()
     {
         var receivedMessage = testQueue.Peek(0);
@@ -160,6 +91,75 @@ public sealed class InMemoryQueue_UnitTests
         Assert.Equal(2, receivedMessages.Count);
         Assert.Equal(payload2, receivedMessages[0].Payload);
         Assert.Equal(payload3, receivedMessages[1].Payload);
+    }
+
+    [Fact]
+    public void SendAndReceive_SingleMessage_SendFirst_Works()
+    {
+        var (message, payload) = CreateTestMessage();
+
+        ReceivedBusMessage<object>? receivedMessage = null;
+
+        testQueue.Publish(message);
+
+        testQueue.Receive((message, actions) =>
+        {
+            receivedMessage = message;
+            actions.Complete();
+        });
+
+        Assert.NotNull(receivedMessage);
+        Assert.Equal(payload, receivedMessage.Payload);
+    }
+
+    [Fact]
+    public void SendAndReceive_SingleMessage_ReceiveFirst_Works()
+    {
+        var (message, payload) = CreateTestMessage();
+
+        ReceivedBusMessage<object>? receivedMessage = null;
+
+        testQueue.Receive((message, actions) =>
+        {
+            receivedMessage = message;
+            actions.Complete();
+        });
+
+        testQueue.Publish(message);
+
+        Assert.NotNull(receivedMessage);
+        Assert.Equal(payload, receivedMessage.Payload);
+    }
+
+    [Fact]
+    public void SendAndReceive_MultipleMessages_Works()
+    {
+        var (message1, payload1) = CreateTestMessage();
+        var (message2, payload2) = CreateTestMessage();
+
+        ReceivedBusMessage<object>? receivedMessage1 = null;
+        ReceivedBusMessage<object>? receivedMessage2 = null;
+
+        testQueue.Publish(message1);
+        testQueue.Publish(message2);
+
+        testQueue.Receive((message, actions) =>
+        {
+            receivedMessage1 = message;
+            actions.Complete();
+        });
+
+        testQueue.Receive((message, actions) =>
+        {
+            receivedMessage2 = message;
+            actions.Complete();
+        });
+
+        Assert.NotNull(receivedMessage1);
+        Assert.Equal(payload1, receivedMessage1.Payload);
+  
+        Assert.NotNull(receivedMessage2);
+        Assert.Equal(payload2, receivedMessage2.Payload);
     }
 
     [Fact]
