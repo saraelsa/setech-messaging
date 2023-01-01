@@ -7,7 +7,7 @@ public sealed class InMemoryQueue_UnitTests
 {
     private InMemoryQueue<object> testQueue = new (new InMemoryQueueOptions());
 
-    (BusMessage<object>, object) CreateTestMessage()
+    private (BusMessage<object>, object) CreateTestMessage()
     {
         object payload = new ();
         BusMessage<object> message = new () { Payload = payload };
