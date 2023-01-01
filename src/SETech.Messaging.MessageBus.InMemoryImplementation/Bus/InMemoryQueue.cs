@@ -161,7 +161,8 @@ public class InMemoryQueue<TPayload>
                 Complete = messageLock.CreateHandler(() => { }),
                 Abandon = () =>  messageLock.CreateHandler(() => AbandonMessage(message)),
                 Defer = () => messageLock.CreateHandler(() => DeferMessage(message)),
-                DeadLetter = () => messageLock.CreateHandler(() => DeadLetterMessage(message))
+                DeadLetter = (reason, description) =>
+                    messageLock.CreateHandler(() => DeadLetterMessage(message, reason, description))
             };
 
             receiverFunction(receivedMessage, receivedMessageActions);
@@ -200,7 +201,7 @@ public class InMemoryQueue<TPayload>
 
         if (!IsDeadLetterQueue && message.DeliveryAttempts > MaximumDeliveryAttempts)
         {
-            DeadLetterMessage(message);
+            DeadLetterMessage(message, reason: "MaxDeliveryCountExceeded", description: null);
             return;
         }
 
@@ -225,11 +226,20 @@ public class InMemoryQueue<TPayload>
 
     /// <summary>Sends a message to the dead-letter queue.</summary>
     /// <param name="message">The message to dead-letter.</param>
-    protected void DeadLetterMessage(StoredMessage<TPayload> message)
+    protected void DeadLetterMessage(StoredMessage<TPayload> message, string? reason, string? description)
     {
         if (IsDeadLetterQueue)
             throw new NotSupportedException("Messages in the dead letter queue can not be further dead lettered.");
+        
+        BusMessage<TPayload> deadLetteredMessage = new ()
+        {
+            MessageId = message.MessageId,
+            TimeToLive = message.TimeToLive,
+            Payload = message.Payload,
+            DeadLetterReason = message.DeadLetterReason,
+            DeadLetterDescription = message.DeadLetterDescription
+        };
 
-        DeadLetterQueue!.PublishInternal(message);
+        DeadLetterQueue!.PublishInternal(deadLetteredMessage);
     }
 }

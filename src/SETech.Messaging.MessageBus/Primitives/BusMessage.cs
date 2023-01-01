@@ -15,10 +15,23 @@ public class BusMessage<TPayload>
     /// <summary>The payload of the message.</summary>
     public required TPayload Payload { get; init; }
 
+    /// <summary>The reason this message was dead-lettered, if any.</summary>
+    public string? DeadLetterReason { get; init; }
+
+    /// <summary>The description of the reason this message was dead-lettered, if any.</summary>
+    public string? DeadLetterDescription { get; init; }
+
     public BusMessage() { }
 
     [SetsRequiredMembers]
-    public BusMessage(string? messageId, TimeSpan timeToLive, TPayload payload)
+    public BusMessage
+    (
+        string? messageId,
+        TimeSpan timeToLive,
+        TPayload payload,
+        string? deadLetterReason = default,
+        string? deadLetterDescription = default
+    )
     {
         MessageId = messageId;
         TimeToLive = timeToLive;

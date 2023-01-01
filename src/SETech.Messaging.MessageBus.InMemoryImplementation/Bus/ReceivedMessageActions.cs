@@ -16,5 +16,5 @@ public class ReceivedMessageActions
     public required Action Defer { get; init; }
 
     /// <summary>Sends a message to the dead-letter queue.</summary>
-    public required Action DeadLetter { get; init; }
+    public required Action<string?, string?> DeadLetter { get; init; }
 }

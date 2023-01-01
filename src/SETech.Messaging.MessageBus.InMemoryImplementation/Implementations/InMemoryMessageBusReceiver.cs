@@ -137,22 +137,23 @@ public class InMemoryMessageBusReceiver<TPayload> : IMessageBusReceiver<TPayload
         return Task.CompletedTask;
     }
 
-    public Task DeadLetterMessageAsync(ReceivedBusMessage<TPayload> message, CancellationToken cancellationToken = default)
-    {
-        GetMessageActionsOrThrow(message.SequenceNumber).DeadLetter();
-
-        return Task.CompletedTask;
-    }
+    public Task DeadLetterMessageAsync
+    (
+        ReceivedBusMessage<TPayload> message,
+        CancellationToken cancellationToken = default
+    ) => DeadLetterMessageAsync(message, reason: null, description: null, cancellationToken);
 
     public Task DeadLetterMessageAsync
     (
         ReceivedBusMessage<TPayload> message,
-        string reason,
-        string description,
+        string? reason,
+        string? description,
         CancellationToken cancellationToken = default
     )
     {
-        throw new NotImplementedException();
+        GetMessageActionsOrThrow(message.SequenceNumber).DeadLetter(reason, description);
+
+        return Task.CompletedTask;
     }
 
     public Task DeferMessageAsync(ReceivedBusMessage<TPayload> message, CancellationToken cancellationToken = default)
