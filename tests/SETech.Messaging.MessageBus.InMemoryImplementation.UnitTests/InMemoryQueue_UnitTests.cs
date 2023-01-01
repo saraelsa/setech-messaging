@@ -211,6 +211,7 @@ public sealed class InMemoryQueue_UnitTests
         receivedMessage = testQueue.Peek(0);
 
         Assert.NotNull(receivedMessage);
+        Assert.True(receivedMessage.Deferred);
         Assert.Equal(payload, receivedMessage.Payload);
     }
 
@@ -234,6 +235,7 @@ public sealed class InMemoryQueue_UnitTests
         });
 
         Assert.NotNull(receivedMessage);
+        Assert.True(receivedMessage.Deferred);
         Assert.Equal(payload, receivedMessage.Payload);
     }
 
@@ -314,11 +316,15 @@ public sealed class InMemoryQueue_UnitTests
     {
         var (message, payload) = CreateTestMessage();
 
-        testQueue.Schedule(message, DateTimeOffset.Now.AddSeconds(5));
+        var sendOn = DateTimeOffset.Now.AddSeconds(5);
+
+        testQueue.Schedule(message, sendOn);
 
         var receivedMessage = testQueue.Peek(fromSequenceNumber: 0);
 
         Assert.NotNull(receivedMessage);
+        Assert.Equal(sendOn, receivedMessage.ScheduledFor);
+        Assert.Equal(payload, receivedMessage.Payload);
     }
 
     [Fact]

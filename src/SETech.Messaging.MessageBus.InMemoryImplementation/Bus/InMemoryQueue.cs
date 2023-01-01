@@ -176,13 +176,7 @@ public class InMemoryQueue<TPayload>
 
         StoredMessage<TPayload> message = Messages[sequenceNumber.Value];
 
-        ReceivedBusMessage<TPayload> receivedMessage = new ()
-        {
-            MessageId = message.MessageId,
-            SequenceNumber = message.SequenceNumber,
-            TimeToLive = message.TimeToLive,
-            Payload = message.Payload
-        };
+        ReceivedBusMessage<TPayload> receivedMessage = GenerateReceivedMessage(message);
 
         return receivedMessage;
     }
@@ -194,17 +188,23 @@ public class InMemoryQueue<TPayload>
         IList<ReceivedBusMessage<TPayload>> receivedMessages = Messages
             .Where(messagePair => messagePair.Key >= fromSequenceNumber)
             .Take(maximumResults)
-            .Select(messagePair => new ReceivedBusMessage<TPayload>()
-            {
-                MessageId = messagePair.Value.MessageId,
-                SequenceNumber = messagePair.Value.SequenceNumber,
-                TimeToLive = messagePair.Value.TimeToLive,
-                Payload = messagePair.Value.Payload
-            })
+            .Select(messagePair => GenerateReceivedMessage(messagePair.Value))
             .ToList();
 
         return receivedMessages;
     }
+
+    protected ReceivedBusMessage<TPayload> GenerateReceivedMessage(StoredMessage<TPayload> storedMessage) =>
+        new ReceivedBusMessage<TPayload>()
+        {
+            MessageId = storedMessage.MessageId,
+            SequenceNumber = storedMessage.SequenceNumber,
+            TimeToLive = storedMessage.TimeToLive,
+            Payload = storedMessage.Payload,
+            Deferred = storedMessage.Deferred,
+            ScheduledFor = storedMessage.ScheduledFor,
+            Timestamp = storedMessage.Timestamp
+        };
 
     /// <summary>Tries to send a message awaiting receival to the first receiver function waiting in line.</summary>
     protected void TryProcessNext()
@@ -249,13 +249,7 @@ public class InMemoryQueue<TPayload>
 
         message.Locked = true;
 
-        ReceivedBusMessage<TPayload> receivedMessage = new ()
-        {
-            MessageId = message.MessageId,
-            SequenceNumber = message.SequenceNumber,
-            TimeToLive = message.TimeToLive,
-            Payload = message.Payload
-        };
+        ReceivedBusMessage<TPayload> receivedMessage = GenerateReceivedMessage(message);
 
         MessageLock messageLock = new (LockDuration);
 
