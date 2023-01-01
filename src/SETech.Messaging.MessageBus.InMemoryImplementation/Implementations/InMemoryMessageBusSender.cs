@@ -38,13 +38,12 @@ public class InMemoryMessageBusSender<TPayload> : IMessageBusSender<TPayload>
         BusMessage<TPayload> message,
         DateTimeOffset sendOn,
         CancellationToken cancellationToken = default
-    )
-    {
-        throw new NotImplementedException();
-    }
+    ) => Task.FromResult(Queue.Schedule(message, sendOn));
 
     public Task CancelScheduledMessageAsync(long sequenceNumber, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        Queue.CancelScheduledMessage(sequenceNumber);
+
+        return Task.CompletedTask;
     }
 }

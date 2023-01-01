@@ -30,6 +30,14 @@ public class InMemoryQueue<TPayload>
     /// <remarks>The full messages are stored in <see cref="Messages"/>.</remarks>
     protected Queue<long> MessagesSequenceNumberQueue { get; } = new ();
 
+    /// <summary>The sequence numbers of messages that are currently scheduled.</summary>
+    /// <remarks>
+    ///     Even though the messages' <see cref="StoredMessage{TPayload}.ScheduledFor"/> property could be used to identify
+    ///     scheduled messages, a separate list is stored for performance reasons. The full messages are stored in
+    ///     <see cref="Messages"/>.
+    /// </remarks>
+    protected ICollection<long> ScheduledMessageIds { get; } = new List<long>();
+
     /// <summary>The pending receiver functions to receive messages.</summary>
     protected Queue<ReceiverFunctionDelegate> ReceiverFunctions { get; } = new();
 
@@ -77,6 +85,44 @@ public class InMemoryQueue<TPayload>
         MessagesSequenceNumberQueue.Enqueue(storedMessage.SequenceNumber);
 
         TryProcessNext();
+    }
+
+    /// <summary>Schedules a message to be sent at a later time.</summary>
+    /// <param name="message">The message to schedule.</param>
+    /// <param name="sendOn">The time at which to send the message.</param>
+    /// <returns>The sequence number of the scheduled message.</returns>
+    public long Schedule(BusMessage<TPayload> message, DateTimeOffset sendOn)
+    {
+        if (IsDeadLetterQueue)
+            throw new NotSupportedException("Dead letter queues do not support directly publishing messages to them.");
+
+        StoredMessage<TPayload> storedMessage = new StoredMessage<TPayload>(message, LastSequenceNumber++)
+        {
+            ScheduledFor = sendOn
+        };
+
+        Messages.Add(storedMessage.SequenceNumber, storedMessage);
+        ScheduledMessageIds.Add(storedMessage.SequenceNumber);
+
+        return storedMessage.SequenceNumber;
+    }
+
+    /// <exception cref="MessageNotFoundException">
+    ///     Thrown when no message with the specified sequence number was found.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    ///     Thrown when the message with the specified sequence number was not scheduled.
+    /// </exception>
+    public void CancelScheduledMessage(long sequenceNumber)
+    {
+        if (!Messages.ContainsKey(sequenceNumber))
+            throw new MessageNotFoundException(sequenceNumber);
+
+        if (!ScheduledMessageIds.Contains(sequenceNumber))
+            throw new InvalidOperationException("Can not cancel a message that is not scheduled in the future.");
+
+        Messages.Remove(sequenceNumber);
+        ScheduledMessageIds.Remove(sequenceNumber);
     }
 
     /// <summary>Receives a message from this queue. A receiver function is called once a message is received.</summary>
@@ -160,6 +206,8 @@ public class InMemoryQueue<TPayload>
     {
         if (!IsDeadLetterQueue)
             DeadLetterExpiredMessages();
+        
+        ProcessScheduledMessages();
 
         if (MessagesSequenceNumberQueue.Count > 0 && ReceiverFunctions.Count > 0)
         {
@@ -170,6 +218,26 @@ public class InMemoryQueue<TPayload>
         }
     }
 
+    /// <summary>Sends due scheduled messages to the queue.</summary>
+    protected void ProcessScheduledMessages()
+    {
+        // Enumerates a copy of the list to allow modifying the original list during enumeration.
+        foreach (long sequenceNumber in new List<long>(ScheduledMessageIds))
+        {
+            StoredMessage<TPayload> message = Messages[sequenceNumber];
+
+            if (DateTimeOffset.Now >= message.ScheduledFor)
+            {
+                message.ScheduledFor = null;
+                ScheduledMessageIds.Remove(sequenceNumber);
+                MessagesSequenceNumberQueue.Enqueue(sequenceNumber);
+            }
+        }
+    }
+
+    /// <summary>Sends the message with the specified sequence number to a specified receiver function.</summary>
+    /// <param name="sequenceNumber">The sequence number of the message to send.</param>
+    /// <param name="receiverFunction">The receiver function to send the message to.</param>
     protected void ProcessMessageForReceiver(long sequenceNumber, ReceiverFunctionDelegate receiverFunction)
     {
         StoredMessage<TPayload> message = Messages[sequenceNumber];
