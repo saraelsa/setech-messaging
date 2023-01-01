@@ -16,6 +16,9 @@ public class InMemoryQueue<TPayload>
     /// </summary>
     public int MaximumDeliveryAttempts { get; protected init; }
 
+    /// <summary>The maximum time for which a message may remain in the queue.</summary>
+    public static TimeSpan MaximumTimeToLive = TimeSpan.FromDays(7);
+
     /// <summary>
     ///     The last sequence number that was used.
     /// </summary>
@@ -279,7 +282,14 @@ public class InMemoryQueue<TPayload>
 
         StoredMessage<TPayload> nextMessage = Messages[MessagesSequenceNumberQueue.Peek()];
 
-        if (DateTime.Now - nextMessage.Timestamp > nextMessage.TimeToLive)
+        TimeSpan timeToLive;
+
+        if (nextMessage.TimeToLive == null || nextMessage.TimeToLive.Value > MaximumTimeToLive)
+            timeToLive = MaximumTimeToLive;
+        else
+            timeToLive = nextMessage.TimeToLive.Value;
+
+        if (DateTime.Now - nextMessage.Timestamp > timeToLive)
         {
             MessagesSequenceNumberQueue.Dequeue();
             Messages.Remove(nextMessage.SequenceNumber);
@@ -338,7 +348,7 @@ public class InMemoryQueue<TPayload>
         BusMessage<TPayload> deadLetteredMessage = new ()
         {
             MessageId = message.MessageId,
-            TimeToLive = message.TimeToLive,
+            TimeToLive = null,
             Payload = message.Payload,
             DeadLetterReason = message.DeadLetterReason,
             DeadLetterDescription = message.DeadLetterDescription

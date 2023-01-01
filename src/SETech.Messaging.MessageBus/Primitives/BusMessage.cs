@@ -10,7 +10,7 @@ public class BusMessage<TPayload>
     public string? MessageId { get; init; }
 
     /// <summary>The duration after which the message expires.</summary>
-    public required TimeSpan TimeToLive { get; init; }
+    public TimeSpan? TimeToLive { get; init; }
 
     /// <summary>The payload of the message.</summary>
     public required TPayload Payload { get; init; }
@@ -27,7 +27,7 @@ public class BusMessage<TPayload>
     public BusMessage
     (
         string? messageId,
-        TimeSpan timeToLive,
+        TimeSpan? timeToLive,
         TPayload payload,
         string? deadLetterReason = default,
         string? deadLetterDescription = default
