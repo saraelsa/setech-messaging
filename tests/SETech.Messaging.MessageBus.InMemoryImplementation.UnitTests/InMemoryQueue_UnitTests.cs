@@ -163,6 +163,114 @@ public sealed class InMemoryQueue_UnitTests
     }
 
     [Fact]
+    public void Settlement_AbandonMessage_ReturnsToQueue()
+    {
+        var (message, payload) = CreateTestMessage();
+
+        ReceivedBusMessage<object>? receivedMessage = null;
+
+        testQueue.Publish(message);
+
+        testQueue.Receive((message, actions) =>
+        {
+            actions.Abandon();
+        });
+
+        testQueue.Receive((message, actions) =>
+        {
+            receivedMessage = message;
+            actions.Complete();
+        });
+
+        Assert.NotNull(receivedMessage);
+        Assert.Equal(payload, receivedMessage.Payload);
+    }
+
+    [Fact]
+    public void Settlement_DeferMessage_RetainsAndDoesNotReceive()
+    {
+        var (message, payload) = CreateTestMessage();
+
+        ReceivedBusMessage<object>? receivedMessage = null;
+
+        testQueue.Publish(message);
+
+        testQueue.Receive((message, actions) =>
+        {
+            actions.Defer();
+        });
+
+        testQueue.Receive((message, actions) =>
+        {
+            receivedMessage = message;
+            actions.Complete();
+        });
+
+        Assert.Null(receivedMessage);
+
+        receivedMessage = testQueue.Peek(0);
+
+        Assert.NotNull(receivedMessage);
+        Assert.Equal(payload, receivedMessage.Payload);
+    }
+
+    [Fact]
+    public void Settlement_ReceiveDeferredMessage_Works()
+    {
+        var (message, payload) = CreateTestMessage();
+
+        ReceivedBusMessage<object>? receivedMessage = null;
+
+        testQueue.Publish(message);
+
+        testQueue.Receive((message, actions) =>
+        {
+            actions.Defer();
+        });
+
+        testQueue.ReceiveDeferred(sequenceNumber: 0, (message, actions) =>
+        {
+            receivedMessage = message;
+        });
+
+        Assert.NotNull(receivedMessage);
+        Assert.Equal(payload, receivedMessage.Payload);
+    }
+
+    [Fact]
+    public void Settlement_DeadLetterMessage_SendsToDeadLetterQueue()
+    {
+        const string deadLetterReason = "Reason";
+        const string deadLetterDescription = "Description";
+
+        var (message, payload) = CreateTestMessage();
+
+        ReceivedBusMessage<object>? receivedMessage = null;
+
+        testQueue.Receive((message, actions) =>
+        {
+            actions.DeadLetter(deadLetterReason, deadLetterDescription);
+        });
+
+        testQueue.Receive((message, actions) =>
+        {
+            receivedMessage = message;
+            actions.Complete();
+        });
+
+        Assert.Null(receivedMessage);
+
+        testQueue.DeadLetterQueue!.Receive((message, actions) =>
+        {
+            receivedMessage = message;
+            actions.Complete();
+        });
+
+        Assert.NotNull(receivedMessage);
+        Assert.Equal(payload, receivedMessage.Payload);
+    }
+
+    [Fact]
     public void Scheduling_CurrentMessage_Sends()
     {
         var (message, payload) = CreateTestMessage();
