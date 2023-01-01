@@ -23,7 +23,7 @@ public class InMemoryMessageBusReceiver<TPayload> : IMessageBusReceiver<TPayload
     ///     The current pointer used for sequential peeking. The next peeked message with an implied minimum sequence number
     ///     will use this value as the minimum sequence number.
     /// </summary>
-    protected long PeekPointer { get; } = 0;
+    protected long PeekPointer { get; set; } = 0;
 
     /// <summary>Creates an <see cref="InMemoryMessageBusReceiver{TPayload}"/>.</summary>
     /// <param name="queue">The queue to receive messages from.</param>
@@ -49,7 +49,7 @@ public class InMemoryMessageBusReceiver<TPayload> : IMessageBusReceiver<TPayload
     (
         long? fromSequenceNumber = null,
         CancellationToken cancellationToken = default
-    ) => Task.FromResult(Queue.Peek(fromSequenceNumber ?? PeekPointer));
+    ) => Task.FromResult(Queue.Peek(fromSequenceNumber ?? PeekPointer++));
 
     public Task<IReadOnlyCollection<ReceivedBusMessage<TPayload>>> PeekMessagesAsync
     (
