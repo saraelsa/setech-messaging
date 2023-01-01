@@ -265,10 +265,10 @@ public class InMemoryQueue<TPayload>
         {
             RenewLock = messageLock.Renew,
             Complete = messageLock.CreateHandler(() => { }),
-            Abandon = () =>  messageLock.CreateHandler(() => AbandonMessage(message)),
-            Defer = () => messageLock.CreateHandler(() => DeferMessage(message)),
+            Abandon = messageLock.CreateHandler(() => AbandonMessage(message)),
+            Defer = messageLock.CreateHandler(() => DeferMessage(message)),
             DeadLetter = (reason, description) =>
-                messageLock.CreateHandler(() => DeadLetterMessage(message, reason, description))
+                messageLock.CreateHandler(() => DeadLetterMessage(message, reason, description))()
         };
 
         receiverFunction(receivedMessage, receivedMessageActions);
