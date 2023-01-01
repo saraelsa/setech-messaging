@@ -161,4 +161,37 @@ public sealed class InMemoryQueue_UnitTests
         Assert.Equal(payload2, receivedMessages[0].Payload);
         Assert.Equal(payload3, receivedMessages[1].Payload);
     }
+
+    [Fact]
+    public void MessageExpiry_WorksAndSendsToDeadLetterQueue()
+    {
+        object payload = new ();
+
+        BusMessage<object> message = new ()
+        {
+            TimeToLive = TimeSpan.FromSeconds(-1),
+            Payload = payload
+        };
+
+        ReceivedBusMessage<object>? receivedMessage = null;
+
+        testQueue.Publish(message);
+
+        testQueue.Receive((message, actions) =>
+        {
+            receivedMessage = message;
+            actions.Complete();
+        });
+
+        Assert.Null(receivedMessage);
+
+        testQueue.DeadLetterQueue!.Receive((message, actions) =>
+        {
+            receivedMessage = message;
+            actions.Complete();
+        });
+
+        Assert.NotNull(receivedMessage);
+        Assert.Equal(payload, receivedMessage.Payload);
+    }
 }
