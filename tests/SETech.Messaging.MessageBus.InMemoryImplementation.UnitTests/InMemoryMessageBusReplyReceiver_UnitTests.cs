@@ -41,7 +41,7 @@ public class InMemoryMessageBusReplyReceiver_UnitTests
     }
 
     [Fact]
-    public async Task ReceiveReply_TwoMessages_SameOrder_Works()
+    public void ReceiveReply_TwoMessages_SameOrder_Works()
     {
         testQueue.Publish(testMessage1);
         testQueue.Publish(testMessage2);
@@ -50,14 +50,14 @@ public class InMemoryMessageBusReplyReceiver_UnitTests
         var receivedMessageTask2 = testReplyReceiver.ReceiveReplyAsync(testPayload2.CorrelationId);
 
         Assert.True(receivedMessageTask1.IsCompletedSuccessfully);
-        Assert.Equal(testPayload1, (await receivedMessageTask1).Payload);
+        Assert.Equal(testPayload1, receivedMessageTask1.GetAwaiter().GetResult().Payload);
 
         Assert.True(receivedMessageTask2.IsCompletedSuccessfully);
-        Assert.Equal(testPayload2, (await receivedMessageTask2).Payload); 
+        Assert.Equal(testPayload2, receivedMessageTask2.GetAwaiter().GetResult().Payload); 
     }
 
     [Fact]
-    public async Task ReceiveReply_TwoMessages_ReverseOrder_Works()
+    public void ReceiveReply_TwoMessages_ReverseOrder_Works()
     {
         testQueue.Publish(testMessage1);
         testQueue.Publish(testMessage2);
@@ -66,9 +66,38 @@ public class InMemoryMessageBusReplyReceiver_UnitTests
         var receivedMessageTask1 = testReplyReceiver.ReceiveReplyAsync(testPayload1.CorrelationId);
 
         Assert.True(receivedMessageTask1.IsCompletedSuccessfully);
-        Assert.Equal(testPayload1, (await receivedMessageTask1).Payload);
+        Assert.Equal(testPayload1, receivedMessageTask1.GetAwaiter().GetResult().Payload);
 
         Assert.True(receivedMessageTask2.IsCompletedSuccessfully);
-        Assert.Equal(testPayload2, (await receivedMessageTask2).Payload); 
+        Assert.Equal(testPayload2, receivedMessageTask2.GetAwaiter().GetResult().Payload); 
+    }
+
+    [Fact]
+    public async Task ReceiveReply_OperationCancelledBeforeRequest_ThrowsOperationCancelledException()
+    {
+        CancellationTokenSource cts = new ();
+        cts.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(
+            () => testReplyReceiver.ReceiveReplyAsync(correlationId: "", cts.Token));
+    }
+
+    [Fact]
+    public void ReceiveReply_OperationCancelledAfterRequest_DoesNotReceive()
+    {
+        CancellationTokenSource cts = new ();
+
+        var receivedMessageTask = testReplyReceiver.ReceiveReplyAsync(testPayload1.CorrelationId, cts.Token);
+
+        cts.Cancel();
+
+        testQueue.Publish(testMessage1);
+
+        Assert.True(receivedMessageTask.IsCanceled);
+
+        var peekedMessage = testQueue.Peek(fromSequenceNumber: 0);
+
+        Assert.NotNull(peekedMessage);
+        Assert.False(peekedMessage.Deferred);
     }
 }

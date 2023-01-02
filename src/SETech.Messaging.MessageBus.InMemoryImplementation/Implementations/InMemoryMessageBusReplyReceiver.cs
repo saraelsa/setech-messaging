@@ -27,14 +27,21 @@ public class InMemoryMessageBusReplyReceiver<TPayload> : IMessageBusReplyReceive
         CancellationToken cancellationToken = default
     )
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         TaskCompletionSource<ReceivedBusMessage<TPayload>> tcs = new (cancellationToken);
 
-        ReceiveReplyAsTaskResult(correlationId, tcs);
+        ReceiveReplyAsTaskResult(correlationId, tcs, cancellationToken);
 
         return tcs.Task;
     }
 
-    protected void ReceiveReplyAsTaskResult(string correlationId, TaskCompletionSource<ReceivedBusMessage<TPayload>> tcs)
+    protected void ReceiveReplyAsTaskResult
+    (
+        string correlationId,
+        TaskCompletionSource<ReceivedBusMessage<TPayload>> tcs,
+        CancellationToken cancellationToken
+    )
     {
         long? existingReplySequenceNumber = TryFindDeferredReplySequenceNumber(correlationId);
 
@@ -44,28 +51,30 @@ public class InMemoryMessageBusReplyReceiver<TPayload> : IMessageBusReplyReceive
             {
                 if (tcs.TrySetResult(message))
                     actions.Complete();
+                else
+                    actions.Abandon();
             });
         }
         else
         {
-            ReceiveNonDeferredReplyAsTaskResult(correlationId, tcs);
+            ReceiveNonDeferredReplyAsTaskResult(correlationId, tcs, cancellationToken);
         }
     }
 
     protected void ReceiveNonDeferredReplyAsTaskResult
     (
         string correlationId,
-        TaskCompletionSource<ReceivedBusMessage<TPayload>> tcs
+        TaskCompletionSource<ReceivedBusMessage<TPayload>> tcs,
+        CancellationToken cancellationToken
     )
     {
-        if (tcs.Task.IsCanceled)
-            return;
-
         Queue.Receive((message, actions) =>
         {
-            if (tcs.Task.IsCanceled)
+            if (cancellationToken.IsCancellationRequested)
             {
                 actions.Abandon();
+                tcs.SetCanceled(cancellationToken);
+
                 return;
             }
 
@@ -73,6 +82,8 @@ public class InMemoryMessageBusReplyReceiver<TPayload> : IMessageBusReplyReceive
             {
                 if (tcs.TrySetResult(message))
                     actions.Complete();
+                else
+                    actions.Abandon();
 
                 return;
             }
@@ -94,7 +105,7 @@ public class InMemoryMessageBusReplyReceiver<TPayload> : IMessageBusReplyReceive
                 });
             }
 
-            ReceiveNonDeferredReplyAsTaskResult(correlationId, tcs);
+            ReceiveNonDeferredReplyAsTaskResult(correlationId, tcs, cancellationToken);
         });
     }
 
