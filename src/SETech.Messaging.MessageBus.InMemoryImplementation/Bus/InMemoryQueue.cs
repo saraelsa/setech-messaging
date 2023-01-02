@@ -288,7 +288,7 @@ public class InMemoryQueue<TPayload>
         else
             timeToLive = nextMessage.TimeToLive.Value;
 
-        if (nextMessage.Timestamp + timeToLive > DateTimeOffset.Now)
+        if (DateTimeOffset.Now > nextMessage.Timestamp + timeToLive)
         {
             MessagesSequenceNumberQueue.Dequeue();
             Messages.Remove(nextMessage.SequenceNumber);
