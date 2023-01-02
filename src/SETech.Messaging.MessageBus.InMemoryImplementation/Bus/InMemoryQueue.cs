@@ -20,9 +20,9 @@ public class InMemoryQueue<TPayload>
     public static TimeSpan MaximumTimeToLive = TimeSpan.FromDays(7);
 
     /// <summary>
-    ///     The last sequence number that was used.
+    ///     The next sequence number to use.
     /// </summary>
-    protected long LastSequenceNumber { get; set; } = 0;
+    protected long NextSequenceNumber { get; set; } = 0;
 
     /// <summary>The messages that were published to this queue, keyed by their sequence numbers.</summary>
     /// <remarks>Messages are stored until they have been settled as complete.</remarks>
@@ -82,7 +82,7 @@ public class InMemoryQueue<TPayload>
     /// <remarks>This internal method does not refuse to publish the message if this is a dead-letter queue.</remarks>
     protected void PublishInternal(BusMessage<TPayload> message)
     {
-        StoredMessage<TPayload> storedMessage = new StoredMessage<TPayload>(message, LastSequenceNumber++);
+        StoredMessage<TPayload> storedMessage = new StoredMessage<TPayload>(message, NextSequenceNumber++);
 
         Messages.Add(storedMessage.SequenceNumber, storedMessage);
         MessagesSequenceNumberQueue.Enqueue(storedMessage.SequenceNumber);
@@ -99,7 +99,7 @@ public class InMemoryQueue<TPayload>
         if (IsDeadLetterQueue)
             throw new NotSupportedException("Dead letter queues do not support directly publishing messages to them.");
 
-        StoredMessage<TPayload> storedMessage = new StoredMessage<TPayload>(message, LastSequenceNumber++)
+        StoredMessage<TPayload> storedMessage = new StoredMessage<TPayload>(message, NextSequenceNumber++)
         {
             ScheduledFor = sendOn
         };
