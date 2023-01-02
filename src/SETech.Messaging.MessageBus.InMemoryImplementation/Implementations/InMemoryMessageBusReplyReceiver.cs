@@ -27,7 +27,7 @@ public class InMemoryMessageBusReplyReceiver<TPayload> : IMessageBusReplyReceive
         CancellationToken cancellationToken = default
     )
     {
-        TaskCompletionSource<ReceivedBusMessage<TPayload>> tcs = new ();
+        TaskCompletionSource<ReceivedBusMessage<TPayload>> tcs = new (cancellationToken);
 
         ReceiveReplyAsTaskResult(correlationId, tcs);
 
@@ -42,8 +42,8 @@ public class InMemoryMessageBusReplyReceiver<TPayload> : IMessageBusReplyReceive
         {
             Queue.ReceiveDeferred(existingReplySequenceNumber.Value, (message, actions) =>
             {
-                tcs.SetResult(message);
-                actions.Complete();
+                if (tcs.TrySetResult(message))
+                    actions.Complete();
             });
         }
         else
@@ -58,12 +58,21 @@ public class InMemoryMessageBusReplyReceiver<TPayload> : IMessageBusReplyReceive
         TaskCompletionSource<ReceivedBusMessage<TPayload>> tcs
     )
     {
+        if (tcs.Task.IsCanceled)
+            return;
+
         Queue.Receive((message, actions) =>
         {
+            if (tcs.Task.IsCanceled)
+            {
+                actions.Abandon();
+                return;
+            }
+
             if (message.Payload.CorrelationId == correlationId)
             {
-                tcs.SetResult(message);
-                actions.Complete();
+                if (tcs.TrySetResult(message))
+                    actions.Complete();
 
                 return;
             }
