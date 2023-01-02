@@ -33,6 +33,10 @@ public class InMemoryQueue<TPayload>
     /// <remarks>The full messages are stored in <see cref="Messages"/>.</remarks>
     protected Queue<long> MessagesSequenceNumberQueue { get; } = new ();
 
+    /// <summary>The sequence numbers of messages in queue order.</summary>
+    /// <remarks>The full messages are stored in <see cref="Messages"/>.</remarks>
+    protected Queue<long> AllMessagesSequenceNumberQueue { get; set; } = new ();
+
     /// <summary>The sequence numbers of messages that are currently scheduled.</summary>
     /// <remarks>
     ///     Even though the messages' <see cref="StoredMessage{TPayload}.ScheduledFor"/> property could be used to identify
@@ -85,7 +89,7 @@ public class InMemoryQueue<TPayload>
         StoredMessage<TPayload> storedMessage = new StoredMessage<TPayload>(message, NextSequenceNumber++);
 
         Messages.Add(storedMessage.SequenceNumber, storedMessage);
-        MessagesSequenceNumberQueue.Enqueue(storedMessage.SequenceNumber);
+        EnqueueSequenceNumber(storedMessage.SequenceNumber);
 
         TryProcessNext();
     }
@@ -105,6 +109,7 @@ public class InMemoryQueue<TPayload>
         };
 
         Messages.Add(storedMessage.SequenceNumber, storedMessage);
+        AllMessagesSequenceNumberQueue.Enqueue(storedMessage.SequenceNumber);
         ScheduledMessageIds.Add(storedMessage.SequenceNumber);
 
         return storedMessage.SequenceNumber;
@@ -124,7 +129,7 @@ public class InMemoryQueue<TPayload>
         if (!ScheduledMessageIds.Contains(sequenceNumber))
             throw new InvalidOperationException("Can not cancel a message that is not scheduled in the future.");
 
-        Messages.Remove(sequenceNumber);
+        RemoveMessage(sequenceNumber);
         ScheduledMessageIds.Remove(sequenceNumber);
     }
 
@@ -167,16 +172,10 @@ public class InMemoryQueue<TPayload>
     /// <param name="fromSequenceNumber">The minimum sequence number of the message to peek.</param>
     public ReceivedBusMessage<TPayload>? Peek(long fromSequenceNumber)
     {
-        long? sequenceNumber = Messages.Keys
-            .Select(key => new Nullable<long>(key))
-            .FirstOrDefault(sequenceNumber => sequenceNumber >= fromSequenceNumber);
-
-        if (sequenceNumber is null)
-            return null;
-
-        StoredMessage<TPayload> message = Messages[sequenceNumber.Value];
-
-        ReceivedBusMessage<TPayload> receivedMessage = GenerateReceivedMessage(message);
+        ReceivedBusMessage<TPayload>? receivedMessage = AllMessagesSequenceNumberQueue
+            .Where(sequenceNumber => sequenceNumber >= fromSequenceNumber)
+            .Select(sequenceNumber => GenerateReceivedMessage(Messages[sequenceNumber]))
+            .FirstOrDefault();
 
         return receivedMessage;
     }
@@ -185,10 +184,10 @@ public class InMemoryQueue<TPayload>
     /// <param name="fromSequenceNumber">The minimum sequence number of the messages to peek.</param>
     public IList<ReceivedBusMessage<TPayload>> PeekMany(long fromSequenceNumber, int maximumResults)
     {
-        IList<ReceivedBusMessage<TPayload>> receivedMessages = Messages
-            .Where(messagePair => messagePair.Key >= fromSequenceNumber)
+        IList<ReceivedBusMessage<TPayload>> receivedMessages = AllMessagesSequenceNumberQueue
+            .Where(sequenceNumber => sequenceNumber >= fromSequenceNumber)
             .Take(maximumResults)
-            .Select(messagePair => GenerateReceivedMessage(messagePair.Value))
+            .Select(sequenceNumber => GenerateReceivedMessage(Messages[sequenceNumber]))
             .ToList();
 
         return receivedMessages;
@@ -235,7 +234,7 @@ public class InMemoryQueue<TPayload>
             {
                 message.ScheduledFor = null;
                 ScheduledMessageIds.Remove(sequenceNumber);
-                MessagesSequenceNumberQueue.Enqueue(sequenceNumber);
+                EnqueueSequenceNumber(sequenceNumber);
             }
         }
     }
@@ -291,7 +290,7 @@ public class InMemoryQueue<TPayload>
         if (DateTimeOffset.Now > nextMessage.Timestamp + timeToLive)
         {
             MessagesSequenceNumberQueue.Dequeue();
-            Messages.Remove(nextMessage.SequenceNumber);
+            RemoveMessage(nextMessage.SequenceNumber);
 
             BusMessage<TPayload> deadLetteredMessage = new ()
             {
@@ -324,14 +323,14 @@ public class InMemoryQueue<TPayload>
         }
 
         message.Locked = false;
-        MessagesSequenceNumberQueue.Enqueue(message.SequenceNumber);
+        EnqueueSequenceNumber(message.SequenceNumber);
     }
 
     /// <summary>Completes a message by removing it from the queue and the list of messages.</summary>
     /// <param name="message">The message to complete.</param>
     protected void CompleteMessage(StoredMessage<TPayload> message)
     {
-        Messages.Remove(message.SequenceNumber);
+        RemoveMessage(message.SequenceNumber);
     }
 
     /// <summary>Abandons a message by returning it to the queue.</summary>
@@ -339,7 +338,7 @@ public class InMemoryQueue<TPayload>
     protected void AbandonMessage(StoredMessage<TPayload> message)
     {
         message.Locked = false;
-        MessagesSequenceNumberQueue.Enqueue(message.SequenceNumber);
+        EnqueueSequenceNumber(message.SequenceNumber);
 
         TryProcessNext();
     }
@@ -359,7 +358,7 @@ public class InMemoryQueue<TPayload>
         if (IsDeadLetterQueue)
             throw new NotSupportedException("Messages in the dead letter queue can not be further dead lettered.");
 
-        Messages.Remove(message.SequenceNumber);
+        RemoveMessage(message.SequenceNumber);
 
         BusMessage<TPayload> deadLetteredMessage = new ()
         {
@@ -371,5 +370,23 @@ public class InMemoryQueue<TPayload>
         };
 
         DeadLetterQueue!.PublishInternal(deadLetteredMessage);
+    }
+
+    protected void EnqueueSequenceNumber(long sequenceNumber)
+    {
+        AllMessagesSequenceNumberQueue = new (AllMessagesSequenceNumberQueue
+            .Where(sequenceNumberInQueue => sequenceNumberInQueue != sequenceNumber)
+            .Append(sequenceNumber)
+            .ToArray());
+        MessagesSequenceNumberQueue.Enqueue(sequenceNumber);
+    }
+
+    protected void RemoveMessage(long sequenceNumber)
+    {
+        Messages.Remove(sequenceNumber);
+
+        AllMessagesSequenceNumberQueue = new (AllMessagesSequenceNumberQueue
+            .Where(sequenceNumberInQueue => sequenceNumberInQueue != sequenceNumber)
+            .ToArray());
     }
 }
