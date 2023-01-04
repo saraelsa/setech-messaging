@@ -193,6 +193,12 @@ public class InMemoryQueue<TPayload>
         return receivedMessages;
     }
 
+    /// <summary>
+    ///     Creates a <see cref="ReceivedBusMessage{TPayload}"/> from a <see cref="StoredMessage{TPayload}"/>.
+    /// </summary>
+    /// <param name="storedMessage">
+    ///     The <see cref="StoredMessage{TPayload}"/> to create the <see cref="ReceivedBusMessage{TPayload}"/> from.
+    /// </param>
     protected ReceivedBusMessage<TPayload> GenerateReceivedMessage(StoredMessage<TPayload> storedMessage) =>
         new ReceivedBusMessage<TPayload>()
         {
