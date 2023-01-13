@@ -94,7 +94,7 @@ public sealed class MessageQueue
         return inProcessMessage.ToReceivedMessage();
     }
 
-    public void RenewMessageLockAsync(string lockToken)
+    public void RenewMessageLock(string lockToken)
     {
         if (_currentLockToken != lockToken)
             throw new MessageLockExpiredException(lockToken);
