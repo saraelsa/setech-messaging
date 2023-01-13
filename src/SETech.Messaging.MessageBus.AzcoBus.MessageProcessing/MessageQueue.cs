@@ -155,8 +155,9 @@ public sealed class MessageQueue
 
         ReceiveRequest? receiveRequest;
 
-        // If there are no requests to receive a message, exit the method.
-        if (!_pendingReceiveRequests.TryDequeue(out receiveRequest))
+        // If there are no requests to receive a message, exit the method. Peek is used instead of dequeue because the method
+        // may exit without processing the receive request.
+        if (!_pendingReceiveRequests.TryPeek(out receiveRequest))
         {
             _isMessageReceiving = false;
             return;
@@ -168,6 +169,7 @@ public sealed class MessageQueue
         // being false.
         if (receiveRequest.CancellationToken.IsCancellationRequested)
         {
+            _pendingReceiveRequests.TryDequeue(out _);
             _isMessageReceiving = false;
             ProcessReceiveRequest();
             return;
@@ -179,13 +181,15 @@ public sealed class MessageQueue
         // Peeks the message instead of dequeuing because the application might crash between here and the message's settlement.
         // We will only dequeue it once it has been settled. This preserves the at-least-once guarantee. It also allows
         // abandoning the message.
-        StoredMessage? nextStoredMessage = await _backingMessageQueue.PeekMessage();
+        StoredMessage? nextStoredMessage = await GetNextUnexpiredMessage();
 
         if (nextStoredMessage is null)
         {
             _isMessageReceiving = false;
             return;
         }
+        
+        _pendingReceiveRequests.TryDequeue(out _);
 
         lock (_messageSettlingLock)
         {
@@ -209,6 +213,16 @@ public sealed class MessageQueue
 
             nextScheduledMessage = await _backingMessageQueue.PeekScheduledMessage();
         }
+    }
+
+    private async Task<StoredMessage?> GetNextUnexpiredMessage()
+    {
+        StoredMessage? nextMessage = await _backingMessageQueue.DequeueMessage();
+
+        while (nextMessage is not null && DateTimeOffset.UtcNow >= nextMessage.ExpiresAtUtc)
+            nextMessage = await _backingMessageQueue.DequeueMessage();
+        
+        return nextMessage;
     }
 
     private string AcquireMessageLock()
