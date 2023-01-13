@@ -42,6 +42,25 @@ public sealed class MessageQueue
         await _backingMessageQueue.EnqueueMessage(storedMessage, cancellationToken);
     }
 
+    public async Task ScheduleMessageAsync(
+        BusMessage message,
+        DateTimeOffset scheduledEnqueueTimeUtc,
+        CancellationToken cancellationToken = default)
+    {
+        long sequenceNumber = await _backingMessageQueue.AllocateSequenceNumber(cancellationToken);
+        DateTimeOffset enqueueTime = DateTimeOffset.UtcNow;
+
+        StoredMessage storedMessage = StoredMessage.FromMessage(
+            message,
+            sequenceNumber,
+            scheduledEnqueueTimeUtc,
+            enqueuedSequenceNumber: sequenceNumber,
+            enqueuedTimeUtc: enqueueTime,
+            deliveryCount: 0);
+        
+        await _backingMessageQueue.EnqueueScheduledMessage(storedMessage, cancellationToken);
+    }
+
     public Task<ReceivedBusMessage> ReceiveMessageAsync(CancellationToken cancellationToken = default)
     {
         TaskCompletionSource<ReceivedBusMessage> taskCompletionSource = new (cancellationToken);
@@ -136,7 +155,7 @@ public sealed class MessageQueue
 
         ReceiveRequest? receiveRequest;
 
-        // If there are no requests to receive a message, we exit the method.
+        // If there are no requests to receive a message, exit the method.
         if (!_pendingReceiveRequests.TryDequeue(out receiveRequest))
         {
             _isMessageReceiving = false;
@@ -153,6 +172,9 @@ public sealed class MessageQueue
             ProcessReceiveRequest();
             return;
         }
+
+        // Ensure any due scheduled messages are added to the queue so they can be received.
+        await ProcessScheduledMessages();
 
         // Peeks the message instead of dequeuing because the application might crash between here and the message's settlement.
         // We will only dequeue it once it has been settled. This preserves the at-least-once guarantee. It also allows
@@ -175,6 +197,18 @@ public sealed class MessageQueue
         }
 
         receiveRequest.TaskCompletionSource.SetResult(_inProcessMessage.ToReceivedMessage());
+    }
+
+    private async Task ProcessScheduledMessages()
+    {
+        StoredMessage? nextScheduledMessage = await _backingMessageQueue.PeekScheduledMessage();
+
+        while (nextScheduledMessage is not null && DateTimeOffset.UtcNow >= nextScheduledMessage.ScheduledEnqueueTimeUtc)
+        {
+            await _backingMessageQueue.TransferScheduledMessage();
+
+            nextScheduledMessage = await _backingMessageQueue.PeekScheduledMessage();
+        }
     }
 
     private string AcquireMessageLock()
