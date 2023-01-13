@@ -59,6 +59,22 @@ public sealed class MessageQueue
         return taskCompletionSource.Task;
     }
 
+    public async Task<ReceivedBusMessage> ReceiveDeferredMessageAsync(
+        long sequenceNumber,
+        CancellationToken cancellationToken = default)
+    {
+        StoredMessage storedMessage
+            = await _backingMessageQueue.DequeueDeferredMessage(sequenceNumber, cancellationToken)
+                ?? throw new MessageNotFoundException(sequenceNumber);
+            
+        InProcessMessage inProcessMessage = InProcessMessage.FromStoredMessage(
+            storedMessage,
+            lockToken: null,
+            lockedUntilUtc: null);
+
+        return inProcessMessage.ToReceivedMessage();
+    }
+
     public void RenewMessageLockAsync(string lockToken)
     {
         if (_currentLockToken != lockToken)
