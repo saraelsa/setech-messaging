@@ -9,6 +9,8 @@ public sealed class MessageQueue
 {
     public TimeSpan MessageLockDuration { get; } = TimeSpan.FromSeconds(30);
 
+    public event EventHandler<BusMessageExpiredEventArgs>? MessageExpired;
+
     private IBackingMessageQueue _backingMessageQueue;
 
     private ConcurrentQueue<ReceiveRequest> _pendingReceiveRequests = new ();
@@ -183,7 +185,7 @@ public sealed class MessageQueue
         // Peeks the message instead of dequeuing because the application might crash between here and the message's settlement.
         // We will only dequeue it once it has been settled. This preserves the at-least-once guarantee. It also allows
         // abandoning the message.
-        StoredMessage? nextStoredMessage = await PeekNextUnexpiredMessage();
+        StoredMessage? nextStoredMessage = await PeekNextMessageAfterDiscardingExpiredMessages();
 
         if (nextStoredMessage is null)
         {
@@ -237,13 +239,27 @@ public sealed class MessageQueue
         }
     }
 
-    private async Task<StoredMessage?> PeekNextUnexpiredMessage()
+    private async Task<StoredMessage?> PeekNextMessageAfterDiscardingExpiredMessages()
     {
         StoredMessage? nextMessage = await _backingMessageQueue.PeekMessage();
 
         while (nextMessage is not null && DateTimeOffset.UtcNow >= nextMessage.ExpiresAtUtc)
-            nextMessage = await _backingMessageQueue.PeekMessage();
-        
+        {
+            InProcessMessage inProcessMessage = InProcessMessage.FromStoredMessage(
+                nextMessage,
+                lockToken: null,
+                lockedUntilUtc: null);
+            
+            BusMessageExpiredEventArgs eventArgs = new (message: inProcessMessage.ToReceivedMessage());
+
+            MessageExpired?.Invoke(this, eventArgs);
+
+            if (eventArgs.Cancel)
+                break;
+
+            await _backingMessageQueue.DequeueMessage();
+        }
+
         return nextMessage;
     }
 
