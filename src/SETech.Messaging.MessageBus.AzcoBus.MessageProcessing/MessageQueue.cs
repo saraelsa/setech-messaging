@@ -21,6 +21,8 @@ public sealed class MessageQueue
     private Timer? _lockExpirationTimer;
     private object _messageSettlingLock = new ();
 
+    private Timer? _scheduledMessageProcessingTimer;
+
     public MessageQueue(IBackingMessageQueue backingMessageQueue)
     {
         _backingMessageQueue = backingMessageQueue;
@@ -40,6 +42,8 @@ public sealed class MessageQueue
             deliveryCount: 0);
 
         await _backingMessageQueue.EnqueueMessage(storedMessage, cancellationToken);
+
+        ProcessReceiveRequest();
     }
 
     public async Task ScheduleMessageAsync(
@@ -59,6 +63,8 @@ public sealed class MessageQueue
             deliveryCount: 0);
         
         await _backingMessageQueue.EnqueueScheduledMessage(storedMessage, cancellationToken);
+
+        ProcessReceiveRequest();
     }
 
     public Task<ReceivedBusMessage> ReceiveMessageAsync(CancellationToken cancellationToken = default)
@@ -199,15 +205,35 @@ public sealed class MessageQueue
         receiveRequest.TaskCompletionSource.SetResult(_inProcessMessage.ToReceivedMessage());
     }
 
+    /// <remarks>
+    ///     This method does not use a lock because it is only called from <see cref="ProcessReceiveRequest"/> which ensures
+    ///     that only one instance of this method is running at any given time.
+    /// </remarks>
     private async Task ProcessScheduledMessages()
     {
+        _scheduledMessageProcessingTimer?.Dispose();
+
         StoredMessage? nextScheduledMessage = await _backingMessageQueue.PeekScheduledMessage();
 
-        while (nextScheduledMessage is not null && DateTimeOffset.UtcNow >= nextScheduledMessage.ScheduledEnqueueTimeUtc)
+        while (nextScheduledMessage is not null)
         {
-            await _backingMessageQueue.TransferScheduledMessage();
+            if (DateTimeOffset.UtcNow >= nextScheduledMessage.ScheduledEnqueueTimeUtc)
+            {
+                await _backingMessageQueue.TransferScheduledMessage();
 
-            nextScheduledMessage = await _backingMessageQueue.PeekScheduledMessage();
+                nextScheduledMessage = await _backingMessageQueue.PeekScheduledMessage();
+            }
+            else
+            {
+                TimeSpan timeUntilNextScheduledMessage =
+                    nextScheduledMessage.ScheduledEnqueueTimeUtc!.Value - DateTimeOffset.UtcNow;
+
+                _scheduledMessageProcessingTimer = new Timer(
+                    callback: state => ProcessReceiveRequest(),
+                    state: null,
+                    dueTime: timeUntilNextScheduledMessage,
+                    period: Timeout.InfiniteTimeSpan);
+            }
         }
     }
 
