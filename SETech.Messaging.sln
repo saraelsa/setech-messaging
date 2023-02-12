@@ -15,6 +15,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SETech.Messaging.MessageBus
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SETech.Messaging.MessageBus.AzcoBus.MessageProcessing", "src\SETech.Messaging.MessageBus.AzcoBus.MessageProcessing\SETech.Messaging.MessageBus.AzcoBus.MessageProcessing.csproj", "{6AF9868B-8B09-4ADB-86C5-0470C7AED389}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SETech.Messaging.MessageBus.AzcoBus.MessageProcessing.MessageQueue.UnitTests", "tests\SETech.Messaging.MessageBus.AzcoBus.MessageProcessing.MessageQueue.UnitTests\SETech.Messaging.MessageBus.AzcoBus.MessageProcessing.MessageQueue.UnitTests.csproj", "{0DBA0DF1-FE1A-4F93-BBF6-872484F974CD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SETech.Messaging.MessageBus.AzcoBus.MessageProcessing.UnitTests", "tests\SETech.Messaging.MessageBus.AzcoBus.MessageProcessing.UnitTests\SETech.Messaging.MessageBus.AzcoBus.MessageProcessing.UnitTests.csproj", "{115B9BB7-73D8-42EF-BC6C-83BD90CDC9D0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -40,11 +44,21 @@ Global
 		{6AF9868B-8B09-4ADB-86C5-0470C7AED389}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6AF9868B-8B09-4ADB-86C5-0470C7AED389}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6AF9868B-8B09-4ADB-86C5-0470C7AED389}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0DBA0DF1-FE1A-4F93-BBF6-872484F974CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0DBA0DF1-FE1A-4F93-BBF6-872484F974CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0DBA0DF1-FE1A-4F93-BBF6-872484F974CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0DBA0DF1-FE1A-4F93-BBF6-872484F974CD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{115B9BB7-73D8-42EF-BC6C-83BD90CDC9D0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{115B9BB7-73D8-42EF-BC6C-83BD90CDC9D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{115B9BB7-73D8-42EF-BC6C-83BD90CDC9D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{115B9BB7-73D8-42EF-BC6C-83BD90CDC9D0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{CD03D318-A2A3-4CCC-BB1E-B5E976A515D0} = {8B11BF63-257D-4807-9EAF-C4283621F1C1}
 		{5A7C97B4-488E-4C03-8A7B-81928DF2E644} = {08B16A32-0951-4C13-9247-69DD95EA1E08}
 		{DE78E32C-6690-443C-8D49-63EBFA621EE3} = {8B11BF63-257D-4807-9EAF-C4283621F1C1}
 		{6AF9868B-8B09-4ADB-86C5-0470C7AED389} = {8B11BF63-257D-4807-9EAF-C4283621F1C1}
+		{0DBA0DF1-FE1A-4F93-BBF6-872484F974CD} = {08B16A32-0951-4C13-9247-69DD95EA1E08}
+		{115B9BB7-73D8-42EF-BC6C-83BD90CDC9D0} = {08B16A32-0951-4C13-9247-69DD95EA1E08}
 	EndGlobalSection
 EndGlobal
