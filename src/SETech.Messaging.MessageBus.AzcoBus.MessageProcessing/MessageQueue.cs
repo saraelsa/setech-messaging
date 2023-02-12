@@ -183,7 +183,7 @@ public sealed class MessageQueue
         // Peeks the message instead of dequeuing because the application might crash between here and the message's settlement.
         // We will only dequeue it once it has been settled. This preserves the at-least-once guarantee. It also allows
         // abandoning the message.
-        StoredMessage? nextStoredMessage = await GetNextUnexpiredMessage();
+        StoredMessage? nextStoredMessage = await PeekNextUnexpiredMessage();
 
         if (nextStoredMessage is null)
         {
@@ -237,12 +237,12 @@ public sealed class MessageQueue
         }
     }
 
-    private async Task<StoredMessage?> GetNextUnexpiredMessage()
+    private async Task<StoredMessage?> PeekNextUnexpiredMessage()
     {
-        StoredMessage? nextMessage = await _backingMessageQueue.DequeueMessage();
+        StoredMessage? nextMessage = await _backingMessageQueue.PeekMessage();
 
         while (nextMessage is not null && DateTimeOffset.UtcNow >= nextMessage.ExpiresAtUtc)
-            nextMessage = await _backingMessageQueue.DequeueMessage();
+            nextMessage = await _backingMessageQueue.PeekMessage();
         
         return nextMessage;
     }
