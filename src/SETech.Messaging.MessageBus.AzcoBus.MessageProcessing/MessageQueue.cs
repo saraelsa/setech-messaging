@@ -13,6 +13,9 @@ public sealed class MessageQueue
 
     private IBackingMessageQueue _backingMessageQueue;
 
+    private IDateTimeOffsetService _dateTimeOffsetService;
+    private IDelayedCallbackService _delayedCallbackService;
+
     private ConcurrentQueue<ReceiveRequest> _pendingReceiveRequests = new ();
 
     private bool _isMessageReceiving = false;
@@ -20,20 +23,25 @@ public sealed class MessageQueue
     private object _messageReceivingLock = new ();
 
     private string? _currentLockToken;
-    private Timer? _lockExpirationTimer;
+    private IDisposable? _lockExpirationTimer;
     private object _messageSettlingLock = new ();
 
-    private Timer? _scheduledMessageProcessingTimer;
+    private IDisposable? _scheduledMessageProcessingTimer;
 
-    public MessageQueue(IBackingMessageQueue backingMessageQueue)
+    public MessageQueue(
+        IBackingMessageQueue backingMessageQueue,
+        IDateTimeOffsetService? dateTimeOffsetService,
+        IDelayedCallbackService? delayedCallbackService)
     {
         _backingMessageQueue = backingMessageQueue;
+        _dateTimeOffsetService = dateTimeOffsetService ?? new DateTimeOffsetService();
+        _delayedCallbackService = delayedCallbackService ?? new DelayedCallbackService();
     }
 
     public async Task PublishMessageAsync(BusMessage message, CancellationToken cancellationToken = default)
     {
         long sequenceNumber = await _backingMessageQueue.AllocateSequenceNumber(cancellationToken);
-        DateTimeOffset enqueueTime = DateTimeOffset.UtcNow;
+        DateTimeOffset enqueueTime = _dateTimeOffsetService.UtcNow;
 
         StoredMessage storedMessage = StoredMessage.FromMessage(
             message,
@@ -54,7 +62,7 @@ public sealed class MessageQueue
         CancellationToken cancellationToken = default)
     {
         long sequenceNumber = await _backingMessageQueue.AllocateSequenceNumber(cancellationToken);
-        DateTimeOffset enqueueTime = DateTimeOffset.UtcNow;
+        DateTimeOffset enqueueTime = _dateTimeOffsetService.UtcNow;
 
         StoredMessage storedMessage = StoredMessage.FromMessage(
             message,
@@ -201,7 +209,7 @@ public sealed class MessageQueue
             _inProcessMessage = InProcessMessage.FromStoredMessage(
                 nextStoredMessage,
                 lockToken,
-                lockedUntilUtc: DateTimeOffset.UtcNow + MessageLockDuration);
+                lockedUntilUtc: _dateTimeOffsetService.UtcNow + MessageLockDuration);
         }
 
         receiveRequest.TaskCompletionSource.SetResult(_inProcessMessage.ToReceivedMessage());
@@ -219,7 +227,7 @@ public sealed class MessageQueue
 
         while (nextScheduledMessage is not null)
         {
-            if (DateTimeOffset.UtcNow >= nextScheduledMessage.ScheduledEnqueueTimeUtc)
+            if (_dateTimeOffsetService.UtcNow >= nextScheduledMessage.ScheduledEnqueueTimeUtc)
             {
                 await _backingMessageQueue.TransferScheduledMessage();
 
@@ -227,14 +235,9 @@ public sealed class MessageQueue
             }
             else
             {
-                TimeSpan timeUntilNextScheduledMessage =
-                    nextScheduledMessage.ScheduledEnqueueTimeUtc!.Value - DateTimeOffset.UtcNow;
-
-                _scheduledMessageProcessingTimer = new Timer(
-                    callback: state => ProcessReceiveRequest(),
-                    state: null,
-                    dueTime: timeUntilNextScheduledMessage,
-                    period: Timeout.InfiniteTimeSpan);
+                _scheduledMessageProcessingTimer = _delayedCallbackService.ExecuteCallbackOn(
+                    ProcessReceiveRequest,
+                    nextScheduledMessage.ScheduledEnqueueTimeUtc!.Value);
             }
         }
     }
@@ -243,7 +246,7 @@ public sealed class MessageQueue
     {
         StoredMessage? nextMessage = await _backingMessageQueue.PeekMessage();
 
-        while (nextMessage is not null && DateTimeOffset.UtcNow >= nextMessage.ExpiresAtUtc)
+        while (nextMessage is not null && _dateTimeOffsetService.UtcNow >= nextMessage.ExpiresAtUtc)
         {
             InProcessMessage inProcessMessage = InProcessMessage.FromStoredMessage(
                 nextMessage,
@@ -278,11 +281,9 @@ public sealed class MessageQueue
         if (_lockExpirationTimer is not null)
             _lockExpirationTimer.Dispose();
         
-        _lockExpirationTimer = new Timer(
-            callback: state => HandleMessageLockExpiry((string)state!),
-            state: lockToken,
-            dueTime: ((int)MessageLockDuration.TotalMilliseconds),
-            period: Timeout.Infinite);
+        _lockExpirationTimer = _delayedCallbackService.ExecuteCallbackAfter(
+            callback: () => HandleMessageLockExpiry(lockToken),
+            delay: MessageLockDuration);
     }
 
     private void VoidMessageLock(string lockToken)
