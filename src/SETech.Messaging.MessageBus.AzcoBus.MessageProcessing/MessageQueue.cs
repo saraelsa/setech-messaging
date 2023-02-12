@@ -163,10 +163,6 @@ public sealed class MessageQueue
             return;
         }
 
-        // If this receive request has been cancelled, repeat the method to process the next receive request. Because
-        // _isMessageReceiving is true and we do not want to risk a competing method call to start processing the request if we
-        // set it to false first, force is set to true so the method starts processing the message without _isMessageReceiving
-        // being false.
         if (receiveRequest.CancellationToken.IsCancellationRequested)
         {
             _pendingReceiveRequests.TryDequeue(out _);
