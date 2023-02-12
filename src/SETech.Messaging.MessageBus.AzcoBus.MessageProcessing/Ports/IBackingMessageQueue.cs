@@ -52,13 +52,13 @@ public interface IBackingMessageQueue
     /// <param name="cancellationToken">The cancellation token to observe while transferring the message.</param>
     public Task<StoredMessage?> TransferScheduledMessage(CancellationToken cancellationToken = default);
 
-    /// <summary>Peeks a message at without dequeuing it.</summary>
+    /// <summary>Peeks a message at the beginning of the queue without dequeuing it.</summary>
     /// <remarks>To include deferred messages, use <see cref="DiagnosticPeekMessage"/>.</remarks>
     /// <param name="cancellationToken">The cancellation token to observe while peeking the message.</param>
     /// <returns>The peeked message, or null if there was no message to peek.</returns>
     public Task<StoredMessage?> PeekMessage(CancellationToken cancellationToken = default);
 
-    /// <summary>Peeks a message at without dequeuing it.</summary>
+    /// <summary>Peeks a message at the beginning of the queue without dequeuing it.</summary>
     /// <remarks>
     ///     Messages are included in this order: deferred messages, followed by normal messages, followed by scheduled messages
     ///     in ascending order of scheduled publication time.
